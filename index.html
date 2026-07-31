@@ -227,7 +227,7 @@
   <p id="status"></p>
 </div>
 <script>
-const FUNCTION_URL = 'https://osvnjxfiuahtfexhensz.supabase.co/functions/v1/lecture-upload';
+const FUNCTION_URL = 'https://osvnjxfiuahtfexhensz.supabase.co/rest/v1/rpc/fire_lecture_upload';
 const PUBLISHABLE_KEY = 'sb_publishable_zQmnrQjdZtkx-KNkGuX9fg_sivRsRLs';
 
 function readFileAsBase64(file) {
@@ -291,14 +291,14 @@ document.getElementById('f').addEventListener('submit', async (e) => {
     label.textContent = '업로드 중...';
     setStatus('info', '업로드 중이에요. 처리에는 몇 분 걸릴 수 있어요...');
     const payload = {
-      subject: form.subject.value,
-      week: form.week.value,
-      session: form.session.value,
-      passcode: form.passcode.value,
-      txtName: txtName,
-      txtBase64,
-      pdfName: pdfFile.name,
-      pdfBase64
+      p_subject: form.subject.value,
+      p_week: form.week.value,
+      p_session: form.session.value,
+      p_passcode: form.passcode.value,
+      p_txt_name: txtName,
+      p_txt_base64: txtBase64,
+      p_pdf_name: pdfFile.name,
+      p_pdf_base64: pdfBase64
     };
     const res = await fetch(FUNCTION_URL, {
       method: 'POST',
@@ -310,7 +310,7 @@ document.getElementById('f').addEventListener('submit', async (e) => {
       body: JSON.stringify(payload)
     });
     const data = await res.json().catch(() => ({}));
-    if (res.ok) {
+    if (res.ok && !data.error) {
       setStatus('success', '업로드 완료! 처리가 끝나면 카카오톡으로 알려드릴게요.');
       form.reset();
     } else {
