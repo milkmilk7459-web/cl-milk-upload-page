@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>강의 자료 업로드 (공유용)</title>
+<title>강의 자료 대시보드</title>
 <style>
   :root {
     --accent: #12406B;
@@ -20,6 +20,8 @@
     --error-text: #B3261E;
     --info-bg: #EAF1FB;
     --info-text: #12406B;
+    --warn-bg: #FFF6E5;
+    --warn-text: #8A5B00;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -37,6 +39,8 @@
       --error-text: #F29B95;
       --info-bg: #17263B;
       --info-text: #8FBBEE;
+      --warn-bg: #332905;
+      --warn-text: #F2C572;
     }
   }
   * { box-sizing: border-box; }
@@ -45,193 +49,535 @@
     background: var(--bg);
     color: var(--text);
     margin: 0;
-    padding: 32px 16px 64px;
+    padding: 24px 16px 64px;
     min-height: 100vh;
-    display: flex;
-    justify-content: center;
   }
+  .wrap { max-width: 1080px; margin: 0 auto; }
   .card {
-    width: 100%;
-    max-width: 440px;
     background: var(--card-bg);
     border-radius: 16px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06);
-    padding: 28px 24px 24px;
   }
-  .header { text-align: center; margin-bottom: 22px; }
-  .header .icon { font-size: 34px; line-height: 1; }
-  h1 { font-size: 19px; margin: 10px 0 4px; }
-  .subtitle { font-size: 13px; color: var(--text-muted); margin: 0; }
+
+  /* ---------- passcode gate ---------- */
+  #gate {
+    position: fixed; inset: 0; z-index: 50;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #gate.hidden { display: none; }
+  .gate-card { width: 100%; max-width: 340px; padding: 28px 24px; text-align: center; }
+  .gate-card .icon { font-size: 32px; }
+  .gate-card h2 { font-size: 17px; margin: 10px 0 16px; }
+  .gate-card input {
+    width: 100%; padding: 11px 12px; font-size: 15px;
+    background: var(--field-bg); border: 1px solid var(--border);
+    border-radius: 10px; outline: none; color: var(--text); text-align: center;
+    letter-spacing: 2px;
+  }
+  .gate-card input:focus { border-color: var(--accent-light); }
+  .gate-card button {
+    width: 100%; margin-top: 12px; padding: 12px; font-size: 14px; font-weight: 700;
+    background: var(--accent); color: #fff; border: none; border-radius: 10px; cursor: pointer;
+  }
+  .gate-err { color: var(--error-text); font-size: 12.5px; margin-top: 10px; display: none; }
+
+  /* ---------- header ---------- */
+  .dash-header {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .dash-header h1 { font-size: 20px; margin: 0; text-align: center; white-space: nowrap; }
+  .quote-box, .dday-box {
+    padding: 14px 16px;
+    min-height: 62px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .quote-box { font-size: 12.5px; }
+  .quote-box .q-text { font-style: italic; color: var(--text); line-height: 1.5; }
+  .quote-box .q-author { color: var(--text-muted); margin-top: 4px; font-size: 11.5px; }
+  .dday-box { align-items: flex-end; text-align: right; cursor: pointer; position: relative; }
+  .dday-box .d-num { font-size: 20px; font-weight: 800; color: var(--accent); }
+  .dday-box .d-label { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+  .dday-box .d-empty { font-size: 12.5px; color: var(--text-muted); }
+  .dday-edit {
+    position: absolute; top: 100%; right: 0; margin-top: 6px;
+    width: 220px; padding: 14px; z-index: 20; text-align: left;
+    display: none;
+  }
+  .dday-edit.show { display: block; }
+  .dday-edit label { display: block; font-size: 11.5px; color: var(--text-muted); margin: 8px 0 4px; }
+  .dday-edit label:first-child { margin-top: 0; }
+  .dday-edit input {
+    width: 100%; padding: 8px 10px; font-size: 13px;
+    background: var(--field-bg); border: 1px solid var(--border); border-radius: 8px;
+    outline: none; color: var(--text);
+  }
+  .dday-edit .row { display: flex; gap: 6px; margin-top: 10px; }
+  .dday-edit button {
+    flex: 1; padding: 8px; font-size: 12.5px; font-weight: 700; border: none; border-radius: 8px; cursor: pointer;
+  }
+  .dday-edit .save-btn { background: var(--accent); color: #fff; }
+  .dday-edit .cancel-btn { background: var(--field-bg); color: var(--text-muted); border: 1px solid var(--border); }
+
+  /* ---------- middle grid ---------- */
+  .dash-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 760px) {
+    .dash-grid { grid-template-columns: 1fr; }
+    .dash-header { grid-template-columns: 1fr; text-align: center; }
+    .dday-box { align-items: center; text-align: center; }
+    .quote-box { text-align: center; }
+  }
+  .panel { padding: 18px 18px 16px; max-height: 420px; display: flex; flex-direction: column; }
+  .panel h2 { font-size: 14.5px; margin: 0 0 12px; color: var(--accent); display: flex; align-items: center; gap: 6px; }
+  .panel-body { overflow-y: auto; flex: 1; }
+  .empty-msg { color: var(--text-muted); font-size: 13px; padding: 20px 4px; text-align: center; }
+
+  /* schedule */
+  .todo-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 9px 4px; border-bottom: 1px solid var(--border);
+  }
+  .todo-item:last-child { border-bottom: none; }
+  .todo-check {
+    width: 19px; height: 19px; border-radius: 50%; border: 2px solid var(--border);
+    flex-shrink: 0; margin-top: 1px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: transparent; transition: all 0.15s ease;
+  }
+  .todo-check.done { background: var(--success-text); border-color: var(--success-text); color: #fff; }
+  .todo-text { flex: 1; font-size: 13.5px; line-height: 1.4; }
+  .todo-item.done .todo-text { color: var(--text-muted); text-decoration: line-through; }
+  .todo-date { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .tag-overdue {
+    display: inline-block; font-size: 10.5px; font-weight: 700; color: var(--error-text);
+    background: var(--error-bg); padding: 1px 6px; border-radius: 6px; margin-left: 6px;
+  }
+
+  /* materials */
+  .subject-group { margin-bottom: 14px; }
+  .subject-group:last-child { margin-bottom: 0; }
+  .subject-title { font-size: 12.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
+  .material-item { padding: 9px 4px; border-bottom: 1px solid var(--border); }
+  .material-item:last-child { border-bottom: none; }
+  .material-title { font-size: 13.5px; font-weight: 600; }
+  .material-links { margin-top: 5px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .material-links a, .material-links button {
+    font-size: 12px; font-weight: 600; text-decoration: none;
+    padding: 4px 10px; border-radius: 7px; border: none; cursor: pointer;
+  }
+  .link-material { background: var(--info-bg); color: var(--info-text); }
+  .link-quiz { background: var(--field-bg); color: var(--text); border: 1px solid var(--border) !important; }
+  .link-take { background: var(--accent); color: #fff; }
+  .status-badge {
+    font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px;
+  }
+  .status-badge.progress { background: var(--warn-bg); color: var(--warn-text); }
+  .status-badge.failed { background: var(--error-bg); color: var(--error-text); }
+  .progress-bar-outer {
+    height: 4px; background: var(--field-bg); border-radius: 2px; margin-top: 6px; overflow: hidden;
+  }
+  .progress-bar-inner { height: 100%; background: var(--accent-light); border-radius: 2px; transition: width 0.3s ease; }
+
+  /* ---------- upload card ---------- */
+  .upload-card { padding: 26px 24px 22px; }
+  .upload-card .header { text-align: center; margin-bottom: 20px; }
+  .upload-card .icon { font-size: 30px; line-height: 1; }
+  .upload-card h2 { font-size: 17px; margin: 8px 0 4px; }
+  .upload-card .subtitle { font-size: 13px; color: var(--text-muted); margin: 0; }
   fieldset { border: none; padding: 0; margin: 0; }
   label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-muted);
-    margin-top: 18px;
-    margin-bottom: 6px;
+    display: block; font-size: 13px; font-weight: 600; color: var(--text-muted);
+    margin-top: 18px; margin-bottom: 6px;
   }
   label:first-of-type { margin-top: 0; }
   .hint { font-weight: 400; color: var(--text-muted); font-size: 12px; }
   input[type="text"], input[type="password"], input:not([type]) {
-    width: 100%;
-    padding: 11px 12px;
-    font-size: 15px;
-    color: var(--text);
-    background: var(--field-bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    outline: none;
-    transition: border-color 0.15s ease;
+    width: 100%; padding: 11px 12px; font-size: 15px; color: var(--text);
+    background: var(--field-bg); border: 1px solid var(--border); border-radius: 10px;
+    outline: none; transition: border-color 0.15s ease;
   }
-  input[type="text"]:focus, input[type="password"]:focus, input:not([type]):focus {
-    border-color: var(--accent-light);
-  }
+  input[type="text"]:focus, input[type="password"]:focus, input:not([type]):focus { border-color: var(--accent-light); }
   input[type="file"] {
-    width: 100%;
-    font-size: 13px;
-    color: var(--text-muted);
-    padding: 10px 12px;
-    background: var(--field-bg);
-    border: 1px dashed var(--border);
-    border-radius: 10px;
+    width: 100%; font-size: 13px; color: var(--text-muted); padding: 10px 12px;
+    background: var(--field-bg); border: 1px dashed var(--border); border-radius: 10px;
   }
   textarea {
-    width: 100%;
-    padding: 11px 12px;
-    font-size: 14px;
-    line-height: 1.5;
-    color: var(--text);
-    background: var(--field-bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    outline: none;
-    resize: vertical;
-    font-family: inherit;
-    transition: border-color 0.15s ease;
+    width: 100%; padding: 11px 12px; font-size: 14px; line-height: 1.5; color: var(--text);
+    background: var(--field-bg); border: 1px solid var(--border); border-radius: 10px;
+    outline: none; resize: vertical; font-family: inherit; transition: border-color 0.15s ease;
   }
   textarea:focus { border-color: var(--accent-light); }
   ::placeholder { color: var(--text-muted); opacity: 0.7; }
-  .seg {
-    display: flex;
-    background: var(--field-bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 3px;
-    gap: 3px;
-  }
+  .seg { display: flex; background: var(--field-bg); border: 1px solid var(--border); border-radius: 10px; padding: 3px; gap: 3px; }
   .seg-btn {
-    width: auto;
-    flex: 1;
-    margin: 0;
-    padding: 8px 6px;
-    font-size: 12.5px;
-    font-weight: 600;
-    background: transparent;
-    color: var(--text-muted);
-    border: none;
-    border-radius: 7px;
-    cursor: pointer;
-    display: block;
+    width: auto; flex: 1; margin: 0; padding: 8px 6px; font-size: 12.5px; font-weight: 600;
+    background: transparent; color: var(--text-muted); border: none; border-radius: 7px; cursor: pointer; display: block;
   }
-  .seg-btn.active {
-    background: var(--card-bg);
-    color: var(--accent);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  .seg-btn.active { background: var(--card-bg); color: var(--accent); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+  .upload-card button[type="submit"] {
+    width: 100%; margin-top: 26px; padding: 14px; font-size: 15px; font-weight: 700;
+    background: var(--accent); color: #fff; border: none; border-radius: 10px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.15s ease;
   }
-  button {
-    width: 100%;
-    margin-top: 26px;
-    padding: 14px;
-    font-size: 15px;
-    font-weight: 700;
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: opacity 0.15s ease;
-  }
-  button:hover:not(:disabled) { opacity: 0.92; }
-  button:disabled { background: var(--text-muted); cursor: default; }
+  .upload-card button[type="submit"]:hover:not(:disabled) { opacity: 0.92; }
+  .upload-card button[type="submit"]:disabled { background: var(--text-muted); cursor: default; }
   .spinner {
-    width: 15px; height: 15px;
-    border: 2px solid rgba(255,255,255,0.4);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    display: none;
+    width: 15px; height: 15px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff;
+    border-radius: 50%; animation: spin 0.7s linear infinite; display: none;
   }
   button:disabled .spinner { display: inline-block; }
   @keyframes spin { to { transform: rotate(360deg); } }
   #status {
-    margin-top: 18px;
-    padding: 12px 14px;
-    border-radius: 10px;
-    font-size: 13.5px;
-    line-height: 1.5;
-    white-space: pre-wrap;
-    display: none;
+    margin-top: 18px; padding: 12px 14px; border-radius: 10px; font-size: 13.5px;
+    line-height: 1.5; white-space: pre-wrap; display: none;
   }
   #status.show { display: block; }
   #status.info { background: var(--info-bg); color: var(--info-text); }
   #status.success { background: var(--success-bg); color: var(--success-text); }
   #status.error { background: var(--error-bg); color: var(--error-text); }
+  .upload-card { max-width: 440px; margin: 0 auto; }
 </style>
 </head>
 <body>
-<div class="card">
-  <div class="header">
-    <div class="icon">📚</div>
-    <h1>강의 자료 업로드</h1>
-    <p class="subtitle">녹음과 교안을 올리면 학습자료 · 문제지가 자동으로 만들어져요</p>
+
+<div id="gate">
+  <div class="card gate-card">
+    <div class="icon">🔒</div>
+    <h2>접근 코드를 입력하세요</h2>
+    <input id="gateInput" type="password" autocomplete="current-password" placeholder="passcode" inputmode="numeric">
+    <button id="gateBtn">확인</button>
+    <p class="gate-err" id="gateErr">코드가 올바르지 않아요. 다시 시도해주세요.</p>
   </div>
-  <form id="f">
-    <fieldset>
-      <label>과목명</label>
-      <input name="subject" placeholder="예: 병리학, 약리학" required>
-
-      <label>주차</label>
-      <input name="week" placeholder="예: 2주차, 3주차" required>
-
-      <label>회차 <span class="hint">(한 주에 수업이 여러 번이면, 선택)</span></label>
-      <input name="session" placeholder="예: 1회, 2회">
-
-      <label>녹음 STT</label>
-      <div class="seg">
-        <button type="button" class="seg-btn active" data-txt-mode="file">파일 업로드 (.txt)</button>
-        <button type="button" class="seg-btn" data-txt-mode="text">직접 입력</button>
-      </div>
-      <div id="txtFilePanel" style="margin-top:8px;">
-        <input name="txt" type="file" accept=".txt" required>
-      </div>
-      <div id="txtTextPanel" style="margin-top:8px; display:none;">
-        <textarea name="txtText" rows="6" placeholder="녹음 내용을 여기에 붙여넣거나 직접 입력하세요"></textarea>
-      </div>
-
-      <label>교안 <span class="hint">(.pdf)</span></label>
-      <input name="pdf" type="file" accept=".pdf" required>
-
-      <label>Passcode</label>
-      <input name="passcode" type="password" required>
-    </fieldset>
-    <button type="submit" id="submitBtn">
-      <span class="spinner"></span>
-      <span id="submitLabel">업로드</span>
-    </button>
-  </form>
-  <p id="status"></p>
 </div>
+
+<div class="wrap">
+  <header class="dash-header">
+    <div class="card quote-box" id="quoteBox">
+      <div class="q-text">오늘의 한마디를 불러오는 중...</div>
+    </div>
+    <h1>📚 강의 자료 대시보드</h1>
+    <div class="card dday-box" id="ddayBox">
+      <div class="d-empty">불러오는 중...</div>
+    </div>
+  </header>
+
+  <main class="dash-grid">
+    <section class="card panel" id="scheduleCard">
+      <h2>🗓️ 일정</h2>
+      <div class="panel-body" id="scheduleBody">
+        <div class="empty-msg">일정을 불러오는 중...</div>
+      </div>
+    </section>
+
+    <section class="card panel" id="materialsCard">
+      <h2>📄 최신 자료</h2>
+      <div class="panel-body" id="materialsBody">
+        <div class="empty-msg">자료 목록을 불러오는 중...</div>
+      </div>
+    </section>
+  </main>
+
+  <section class="card upload-card">
+    <div class="header">
+      <div class="icon">⬆️</div>
+      <h2>새 자료 업로드</h2>
+      <p class="subtitle">녹음과 교안을 올리면 학습자료 · 문제지가 자동으로 만들어져요</p>
+    </div>
+    <form id="f">
+      <fieldset>
+        <label>과목명</label>
+        <input name="subject" placeholder="예: 병리학, 약리학" required>
+
+        <label>주차</label>
+        <input name="week" placeholder="예: 2주차, 3주차" required>
+
+        <label>회차 <span class="hint">(한 주에 수업이 여러 번이면, 선택)</span></label>
+        <input name="session" placeholder="예: 1회, 2회">
+
+        <label>녹음 STT</label>
+        <div class="seg">
+          <button type="button" class="seg-btn active" data-txt-mode="file">파일 업로드 (.txt)</button>
+          <button type="button" class="seg-btn" data-txt-mode="text">직접 입력</button>
+        </div>
+        <div id="txtFilePanel" style="margin-top:8px;">
+          <input name="txt" type="file" accept=".txt" required>
+        </div>
+        <div id="txtTextPanel" style="margin-top:8px; display:none;">
+          <textarea name="txtText" rows="6" placeholder="녹음 내용을 여기에 붙여넣거나 직접 입력하세요"></textarea>
+        </div>
+
+        <label>교안 <span class="hint">(.pdf)</span></label>
+        <input name="pdf" type="file" accept=".pdf" required>
+
+        <label>Passcode</label>
+        <input name="passcode" type="password" autocomplete="current-password" required>
+      </fieldset>
+      <button type="submit" id="submitBtn">
+        <span class="spinner"></span>
+        <span id="submitLabel">업로드</span>
+      </button>
+    </form>
+    <p id="status"></p>
+  </section>
+</div>
+
 <script>
 const SUPABASE_URL = 'https://osvnjxfiuahtfexhensz.supabase.co';
-const FUNCTION_URL = SUPABASE_URL + '/rest/v1/rpc/fire_lecture_upload';
 const PUBLISHABLE_KEY = 'sb_publishable_zQmnrQjdZtkx-KNkGuX9fg_sivRsRLs';
 const UPLOAD_BUCKET = 'lecture-uploads';
+const PASSCODE_KEY = 'cl_milk_passcode';
 
+function rpc(name, body) {
+  return fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': PUBLISHABLE_KEY,
+      'Authorization': 'Bearer ' + PUBLISHABLE_KEY
+    },
+    body: JSON.stringify(body)
+  }).then(r => r.json());
+}
+
+function getPasscode() { return localStorage.getItem(PASSCODE_KEY) || ''; }
+
+/* ---------- passcode gate ---------- */
+const gateEl = document.getElementById('gate');
+const gateInput = document.getElementById('gateInput');
+const gateBtn = document.getElementById('gateBtn');
+const gateErr = document.getElementById('gateErr');
+
+async function tryUnlock(code) {
+  const res = await rpc('list_materials', { p_passcode: code });
+  return Array.isArray(res);
+}
+
+async function attemptGate() {
+  const code = gateInput.value.trim();
+  if (!code) return;
+  gateBtn.disabled = true;
+  gateBtn.textContent = '확인 중...';
+  const ok = await tryUnlock(code).catch(() => false);
+  gateBtn.disabled = false;
+  gateBtn.textContent = '확인';
+  if (ok) {
+    localStorage.setItem(PASSCODE_KEY, code);
+    gateEl.classList.add('hidden');
+    initDashboard();
+  } else {
+    gateErr.style.display = 'block';
+  }
+}
+gateBtn.addEventListener('click', attemptGate);
+gateInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') attemptGate(); });
+
+document.querySelector('input[name="passcode"]').value = getPasscode();
+
+(async function boot() {
+  const saved = getPasscode();
+  if (saved && await tryUnlock(saved).catch(() => false)) {
+    gateEl.classList.add('hidden');
+    initDashboard();
+  } else {
+    gateEl.classList.remove('hidden');
+    gateInput.focus();
+  }
+})();
+
+/* ---------- quote + d-day ---------- */
+async function loadDashboardMeta() {
+  const data = await rpc('get_dashboard_meta', { p_passcode: getPasscode() }).catch(() => null);
+  const quoteBox = document.getElementById('quoteBox');
+  const ddayBox = document.getElementById('ddayBox');
+  if (!data || !data.ok) {
+    quoteBox.innerHTML = '<div class="q-text">오늘의 한마디를 불러오지 못했어요</div>';
+    ddayBox.innerHTML = '<div class="d-empty">-</div>';
+    return;
+  }
+  if (data.quote) {
+    quoteBox.innerHTML = `<div class="q-text">"${escapeHtml(data.quote)}"</div>` +
+      (data.quote_author ? `<div class="q-author">— ${escapeHtml(data.quote_author)}</div>` : '');
+  } else {
+    quoteBox.innerHTML = '<div class="q-text">오늘의 한마디를 준비 중이에요</div>';
+  }
+  renderDday(data.d_day_label, data.d_day_date);
+}
+
+function renderDday(label, dateStr) {
+  const ddayBox = document.getElementById('ddayBox');
+  let inner;
+  if (dateStr) {
+    const today = new Date();
+    const target = new Date(dateStr + 'T00:00:00');
+    const diffDays = Math.round((target - new Date(today.getFullYear(), today.getMonth(), today.getDate())) / 86400000);
+    const dText = diffDays === 0 ? 'D-DAY' : (diffDays > 0 ? `D-${diffDays}` : `D+${-diffDays}`);
+    inner = `<div class="d-num">${dText}</div><div class="d-label">${escapeHtml(label || '')}</div>`;
+  } else {
+    inner = '<div class="d-empty">디데이 설정 +</div>';
+  }
+  ddayBox.innerHTML = inner + `
+    <div class="dday-edit" id="ddayEdit">
+      <label>제목</label>
+      <input id="ddayLabelInput" placeholder="예: 기말고사" value="${escapeAttr(label || '')}">
+      <label>날짜</label>
+      <input id="ddayDateInput" type="date" value="${dateStr || ''}">
+      <div class="row">
+        <button class="cancel-btn" id="ddayCancelBtn" type="button">취소</button>
+        <button class="save-btn" id="ddaySaveBtn" type="button">저장</button>
+      </div>
+    </div>`;
+  ddayBox.onclick = (e) => {
+    if (e.target.closest('.dday-edit')) return;
+    document.getElementById('ddayEdit').classList.toggle('show');
+  };
+  document.getElementById('ddayCancelBtn').onclick = (e) => {
+    e.stopPropagation();
+    document.getElementById('ddayEdit').classList.remove('show');
+  };
+  document.getElementById('ddaySaveBtn').onclick = async (e) => {
+    e.stopPropagation();
+    const newLabel = document.getElementById('ddayLabelInput').value.trim();
+    const newDate = document.getElementById('ddayDateInput').value;
+    await rpc('set_d_day', { p_label: newLabel, p_date: newDate || null, p_passcode: getPasscode() }).catch(() => {});
+    loadDashboardMeta();
+  };
+}
+
+/* ---------- schedule ---------- */
+async function loadSchedule(soft) {
+  const data = await rpc('get_todo_snapshot', { p_passcode: getPasscode() }).catch(() => null);
+  if (!data || !data.ok) {
+    if (!soft) document.getElementById('scheduleBody').innerHTML = '<div class="empty-msg">일정을 불러오지 못했어요</div>';
+    return;
+  }
+  renderSchedule(data.items || []);
+}
+
+function renderSchedule(items) {
+  const body = document.getElementById('scheduleBody');
+  if (!items.length) {
+    body.innerHTML = '<div class="empty-msg">할 일이 없어요 🎉</div>';
+    return;
+  }
+  body.innerHTML = items.map(it => `
+    <div class="todo-item ${it.done ? 'done' : ''}" data-id="${escapeAttr(it.id)}">
+      <div class="todo-check ${it.done ? 'done' : ''}" data-id="${escapeAttr(it.id)}">${it.done ? '✓' : ''}</div>
+      <div style="flex:1;">
+        <div class="todo-text">${escapeHtml(it.title)}${it.overdue && !it.done ? '<span class="tag-overdue">지연</span>' : ''}</div>
+        <div class="todo-date">${escapeHtml(it.date || '')}</div>
+      </div>
+    </div>
+  `).join('');
+  body.querySelectorAll('.todo-check').forEach(el => {
+    el.addEventListener('click', () => toggleTodo(el.dataset.id));
+  });
+}
+
+async function toggleTodo(id) {
+  const row = document.querySelector(`.todo-item[data-id="${cssEscape(id)}"]`);
+  const check = document.querySelector(`.todo-check[data-id="${cssEscape(id)}"]`);
+  const newDone = !check.classList.contains('done');
+  check.classList.toggle('done', newDone);
+  check.textContent = newDone ? '✓' : '';
+  row.classList.toggle('done', newDone);
+  await rpc('toggle_todo_item_local', { p_todo_id: id, p_done: newDone, p_passcode: getPasscode() }).catch(() => {});
+  rpc('fire_todo_toggle', { p_todo_id: id, p_done: newDone, p_passcode: getPasscode() }).catch(() => {});
+}
+
+/* ---------- materials ---------- */
+const STAGE_LABEL = {
+  queued: '대기 중', downloading: '자료 받는 중', generating: '자료 만드는 중',
+  uploading: '업로드 중', done: '완료', failed: '실패'
+};
+const STAGE_PROGRESS = { queued: 10, downloading: 30, generating: 60, uploading: 85, done: 100, failed: 100 };
+
+async function loadMaterials() {
+  const data = await rpc('list_materials', { p_passcode: getPasscode() }).catch(() => null);
+  if (!Array.isArray(data)) return;
+  renderMaterials(data);
+}
+
+function renderMaterials(rows) {
+  const body = document.getElementById('materialsBody');
+  if (!rows.length) {
+    body.innerHTML = '<div class="empty-msg">아직 업로드된 자료가 없어요</div>';
+    return;
+  }
+  const groups = {};
+  rows.forEach(r => {
+    (groups[r.subject] = groups[r.subject] || []).push(r);
+  });
+  body.innerHTML = Object.keys(groups).map(subject => `
+    <div class="subject-group">
+      <div class="subject-title">${escapeHtml(subject)}</div>
+      ${groups[subject].map(materialItemHtml).join('')}
+    </div>
+  `).join('');
+}
+
+function materialItemHtml(r) {
+  const title = `${escapeHtml(r.week)}${r.session ? ' ' + escapeHtml(r.session) : ''}`;
+  if (r.status === 'done') {
+    return `
+      <div class="material-item">
+        <div class="material-title">${title}</div>
+        <div class="material-links">
+          ${r.material_url ? `<a class="link-material" href="${escapeAttr(r.material_url)}" target="_blank" rel="noopener">학습자료</a>` : ''}
+          ${r.quiz_url ? `<a class="link-quiz" href="${escapeAttr(r.quiz_url)}" target="_blank" rel="noopener">문제지</a>` : ''}
+          <a class="link-take" href="quiz.html?id=${encodeURIComponent(r.id)}">응시</a>
+        </div>
+      </div>`;
+  }
+  if (r.status === 'failed') {
+    return `
+      <div class="material-item">
+        <div class="material-title">${title}</div>
+        <div class="material-links"><span class="status-badge failed">실패</span></div>
+        ${r.error ? `<div class="todo-date">${escapeHtml(r.error)}</div>` : ''}
+      </div>`;
+  }
+  const pct = STAGE_PROGRESS[r.status] || 10;
+  return `
+    <div class="material-item">
+      <div class="material-title">${title}</div>
+      <div class="material-links"><span class="status-badge progress">처리 중입니다 · ${STAGE_LABEL[r.status] || r.status}</span></div>
+      <div class="progress-bar-outer"><div class="progress-bar-inner" style="width:${pct}%"></div></div>
+    </div>`;
+}
+
+/* ---------- helpers ---------- */
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+function escapeAttr(s) { return escapeHtml(s); }
+function cssEscape(s) { return String(s).replace(/["\\]/g, '\\$&'); }
+
+/* ---------- init ---------- */
+let materialsPollTimer = null;
+
+function initDashboard() {
+  loadDashboardMeta();
+  loadSchedule(false);
+  loadMaterials();
+
+  rpc('fire_todo_sync', { p_passcode: getPasscode() }).catch(() => {});
+  setTimeout(() => loadSchedule(true), 4000);
+
+  if (materialsPollTimer) clearInterval(materialsPollTimer);
+  materialsPollTimer = setInterval(loadMaterials, 15000);
+}
+
+/* ---------- upload form (unchanged behavior) ---------- */
 function randomId() {
   return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
 }
@@ -303,17 +649,19 @@ document.getElementById('f').addEventListener('submit', async (e) => {
     ]);
     label.textContent = '처리 요청 중...';
     setStatus('info', '학습자료 생성을 요청하고 있어요...');
+    const passcode = form.passcode.value;
+    localStorage.setItem(PASSCODE_KEY, passcode);
     const payload = {
       p_subject: form.subject.value,
       p_week: form.week.value,
       p_session: form.session.value,
-      p_passcode: form.passcode.value,
+      p_passcode: passcode,
       p_txt_name: txtName,
       p_txt_url: txtUrl,
       p_pdf_name: pdfFile.name,
       p_pdf_url: pdfUrl
     };
-    const res = await fetch(FUNCTION_URL, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/fire_lecture_upload`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -326,6 +674,8 @@ document.getElementById('f').addEventListener('submit', async (e) => {
     if (res.ok && data.ok) {
       setStatus('success', '요청 완료! 처리가 끝나면 카카오톡으로 알려드릴게요.\n(' + (data.stage || '') + ')');
       form.reset();
+      form.passcode.value = passcode;
+      loadMaterials();
     } else {
       setStatus('error', '오류 (' + (data.stage || res.status) + '): ' + (data.error || data.detail || res.status));
     }

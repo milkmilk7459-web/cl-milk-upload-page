@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>문제 풀이</title>
+<style>
+  :root {
+    --accent: #12406B;
+    --accent-light: #1F5FA8;
+    --bg: #F3F5F8;
+    --card-bg: #FFFFFF;
+    --text: #1A2430;
+    --text-muted: #6B7684;
+    --border: #DDE3EA;
+    --field-bg: #FAFBFC;
+    --correct-bg: #EAF7EE;
+    --correct-text: #1E7B3C;
+    --correct-border: #4CAF7D;
+    --wrong-bg: #FDECEC;
+    --wrong-text: #B3261E;
+    --wrong-border: #E0645A;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --accent: #4C8DDA;
+      --accent-light: #6FA8E8;
+      --bg: #14181F;
+      --card-bg: #1D232C;
+      --text: #E7ECF2;
+      --text-muted: #97A2AF;
+      --border: #303A46;
+      --field-bg: #232B35;
+      --correct-bg: #123321;
+      --correct-text: #6FDB92;
+      --correct-border: #2F8F5B;
+      --wrong-bg: #3A1717;
+      --wrong-text: #F29B95;
+      --wrong-border: #A24842;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+    background: var(--bg); color: var(--text); margin: 0; padding: 24px 16px 80px;
+    min-height: 100vh; display: flex; justify-content: center;
+  }
+  .wrap { width: 100%; max-width: 560px; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .topbar a { color: var(--text-muted); font-size: 13px; text-decoration: none; }
+  .progress-label { font-size: 12.5px; color: var(--text-muted); font-weight: 600; }
+  .progress-outer { height: 6px; background: var(--field-bg); border-radius: 3px; overflow: hidden; margin-bottom: 20px; }
+  .progress-inner { height: 100%; background: var(--accent-light); border-radius: 3px; transition: width 0.25s ease; }
+  .quiz-title { font-size: 13.5px; color: var(--text-muted); margin-bottom: 6px; text-align: center; }
+
+  .card {
+    background: var(--card-bg); border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06);
+    padding: 22px 20px; margin-bottom: 16px;
+  }
+  .q-text { font-size: 16px; font-weight: 700; line-height: 1.5; margin-bottom: 18px; }
+  .choice {
+    display: block; width: 100%; text-align: left; padding: 13px 14px; margin-bottom: 10px;
+    background: var(--field-bg); border: 1.5px solid var(--border); border-radius: 12px;
+    font-size: 14.5px; color: var(--text); cursor: pointer; transition: all 0.15s ease;
+  }
+  .choice:hover:not(:disabled) { border-color: var(--accent-light); }
+  .choice:disabled { cursor: default; }
+  .choice .idx {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--border);
+    font-size: 11px; font-weight: 700; margin-right: 10px; color: var(--text-muted);
+  }
+  .choice.correct { background: var(--correct-bg); border-color: var(--correct-border); color: var(--correct-text); }
+  .choice.correct .idx { background: var(--correct-border); border-color: var(--correct-border); color: #fff; }
+  .choice.wrong { background: var(--wrong-bg); border-color: var(--wrong-border); color: var(--wrong-text); }
+  .choice.wrong .idx { background: var(--wrong-border); border-color: var(--wrong-border); color: #fff; }
+  .explain {
+    margin-top: -2px; margin-bottom: 10px; padding: 10px 14px; border-radius: 10px;
+    font-size: 13px; line-height: 1.5; background: var(--field-bg); color: var(--text-muted);
+  }
+  .next-btn {
+    width: 100%; padding: 13px; font-size: 14.5px; font-weight: 700; margin-top: 6px;
+    background: var(--accent); color: #fff; border: none; border-radius: 10px; cursor: pointer;
+  }
+  .next-btn:disabled { display: none; }
+
+  .score-card { text-align: center; padding: 32px 20px; }
+  .score-num { font-size: 40px; font-weight: 800; color: var(--accent); }
+  .score-pct { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+  .review-title { font-size: 15px; font-weight: 700; margin: 26px 0 12px; }
+  .review-q { font-size: 13.5px; color: var(--text-muted); margin-bottom: 4px; }
+
+  .center-msg { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+  .center-msg a { color: var(--accent-light); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="index.html">← 대시보드로</a>
+    <span class="progress-label" id="progressLabel"></span>
+  </div>
+  <div class="progress-outer"><div class="progress-inner" id="progressInner" style="width:0%"></div></div>
+  <div class="quiz-title" id="quizTitle"></div>
+  <div id="app"><div class="center-msg">문제를 불러오는 중...</div></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://osvnjxfiuahtfexhensz.supabase.co';
+const PUBLISHABLE_KEY = 'sb_publishable_zQmnrQjdZtkx-KNkGuX9fg_sivRsRLs';
+const PASSCODE_KEY = 'cl_milk_passcode';
+
+function rpc(name, body) {
+  return fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': PUBLISHABLE_KEY,
+      'Authorization': 'Bearer ' + PUBLISHABLE_KEY
+    },
+    body: JSON.stringify(body)
+  }).then(r => r.json());
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+const params = new URLSearchParams(location.search);
+const materialsId = params.get('id');
+const app = document.getElementById('app');
+
+let questions = [];
+let current = 0;
+let answers = []; // {chosenIndex, correct}
+
+function updateProgress() {
+  const total = questions.length;
+  document.getElementById('progressLabel').textContent = current < total ? `문제 ${current + 1} / ${total}` : `${total} / ${total}`;
+  const pct = total ? Math.round((Math.min(current, total)) / total * 100) : 0;
+  document.getElementById('progressInner').style.width = pct + '%';
+}
+
+function renderQuestion() {
+  updateProgress();
+  const q = questions[current];
+  app.innerHTML = `
+    <div class="card">
+      <div class="q-text">${escapeHtml(q.question)}</div>
+      <div id="choices"></div>
+      <button class="next-btn" id="nextBtn" disabled>${current === questions.length - 1 ? '결과 보기' : '다음 문제'}</button>
+    </div>
+  `;
+  const choicesEl = document.getElementById('choices');
+  q.choices.forEach((choice, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice';
+    btn.innerHTML = `<span class="idx">${idx + 1}</span>${escapeHtml(choice)}`;
+    btn.addEventListener('click', () => selectChoice(idx));
+    choicesEl.appendChild(btn);
+    if (idx < q.choices.length) {
+      const spacer = document.createElement('div');
+      spacer.id = 'explain-' + idx;
+      choicesEl.appendChild(spacer);
+    }
+  });
+}
+
+function selectChoice(idx) {
+  const q = questions[current];
+  const correctIdx = q.correctIndex;
+  const isCorrect = idx === correctIdx;
+  answers[current] = { chosenIndex: idx, correct: isCorrect };
+
+  const buttons = document.querySelectorAll('#choices .choice');
+  buttons.forEach(b => b.disabled = true);
+
+  buttons[idx].classList.add(isCorrect ? 'correct' : 'wrong');
+  const explainEl = document.getElementById('explain-' + idx);
+  explainEl.outerHTML = `<div class="explain" id="explain-${idx}">${isCorrect ? '✓ 정답입니다. ' : '✗ 오답입니다. '}${escapeHtml(q.explanation || '')}</div>`;
+
+  if (!isCorrect) {
+    buttons[correctIdx].classList.add('correct');
+  }
+
+  document.getElementById('nextBtn').disabled = false;
+  document.getElementById('nextBtn').addEventListener('click', goNext, { once: true });
+}
+
+function goNext() {
+  current++;
+  if (current < questions.length) {
+    renderQuestion();
+  } else {
+    renderScore();
+  }
+}
+
+function renderScore() {
+  updateProgress();
+  const total = questions.length;
+  const correctCount = answers.filter(a => a && a.correct).length;
+  const pct = total ? Math.round(correctCount / total * 100) : 0;
+  const wrongIdxs = questions.map((_, i) => i).filter(i => answers[i] && !answers[i].correct);
+
+  let html = `
+    <div class="card score-card">
+      <div class="score-num">${correctCount} / ${total}</div>
+      <div class="score-pct">정답률 ${pct}%</div>
+    </div>
+  `;
+
+  if (wrongIdxs.length) {
+    html += `<div class="review-title">틀린 문제 다시보기</div>`;
+    wrongIdxs.forEach(i => {
+      const q = questions[i];
+      const chosen = answers[i].chosenIndex;
+      html += `
+        <div class="card">
+          <div class="review-q">문제 ${i + 1}</div>
+          <div class="q-text">${escapeHtml(q.question)}</div>
+          ${q.choices.map((c, idx) => {
+            let cls = 'choice';
+            if (idx === q.correctIndex) cls += ' correct';
+            else if (idx === chosen) cls += ' wrong';
+            return `<button class="${cls}" disabled><span class="idx">${idx + 1}</span>${escapeHtml(c)}</button>`;
+          }).join('')}
+          <div class="explain">${escapeHtml(q.explanation || '')}</div>
+        </div>
+      `;
+    });
+  } else {
+    html += `<div class="center-msg">🎉 모든 문제를 맞혔어요!</div>`;
+  }
+
+  app.innerHTML = html;
+}
+
+async function boot() {
+  if (!materialsId) {
+    app.innerHTML = '<div class="center-msg">잘못된 접근이에요.<br><a href="index.html">대시보드로 돌아가기</a></div>';
+    return;
+  }
+  const passcode = localStorage.getItem(PASSCODE_KEY) || '';
+  const data = await rpc('get_quiz', { p_materials_id: Number(materialsId), p_passcode: passcode }).catch(() => null);
+  if (!data || !data.ok) {
+    const msg = data && data.stage === 'no_quiz'
+      ? '아직 이 자료의 문제 데이터가 준비되지 않았어요.'
+      : '문제를 불러오지 못했어요.';
+    app.innerHTML = `<div class="center-msg">${msg}<br><a href="index.html">대시보드로 돌아가기</a></div>`;
+    return;
+  }
+  questions = data.questions || [];
+  document.getElementById('quizTitle').textContent =
+    `${data.subject || ''} ${data.week || ''} ${data.session || ''}`.trim();
+  if (!questions.length) {
+    app.innerHTML = '<div class="center-msg">문제가 없어요.<br><a href="index.html">대시보드로 돌아가기</a></div>';
+    return;
+  }
+  renderQuestion();
+}
+
+boot();
+</script>
+</body>
+</html>
