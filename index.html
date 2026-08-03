@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>강의 자료 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --accent: #12406B;
@@ -82,48 +85,77 @@
   }
   .gate-err { color: var(--error-text); font-size: 12.5px; margin-top: 10px; display: none; }
 
-  /* ---------- header ---------- */
-  .dash-header {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 18px;
+  /* ---------- top-left quick nav ---------- */
+  .nav-icon-btn {
+    position: fixed; top: 18px; left: 18px; z-index: 40;
+    width: 36px; height: 36px; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 9px;
+    cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   }
-  .dash-header h1 { font-size: 20px; margin: 0; text-align: center; white-space: nowrap; }
-  .quote-box, .dday-box {
-    padding: 14px 16px;
-    min-height: 62px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-  .quote-box { font-size: 12.5px; }
-  .quote-box .q-text { font-style: italic; color: var(--text); line-height: 1.5; }
-  .quote-box .q-author { color: var(--text-muted); margin-top: 4px; font-size: 11.5px; }
-  .dday-box { align-items: flex-end; text-align: right; cursor: pointer; position: relative; }
-  .dday-box .d-num { font-size: 20px; font-weight: 800; color: var(--accent); }
-  .dday-box .d-label { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
-  .dday-box .d-empty { font-size: 12.5px; color: var(--text-muted); }
-  .dday-edit {
-    position: absolute; top: 100%; right: 0; margin-top: 6px;
-    width: 220px; padding: 14px; z-index: 20; text-align: left;
+  .nav-icon-btn svg { width: 16px; height: 16px; }
+  .nav-icon-btn rect { fill: none; stroke: var(--text-muted); stroke-width: 1.6; }
+  .nav-menu {
+    position: fixed; top: 60px; left: 18px; z-index: 40;
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12); padding: 8px; min-width: 140px;
     display: none;
   }
+  .nav-menu.show { display: block; }
+  .nav-menu a {
+    display: block; padding: 8px 10px; border-radius: 8px; font-size: 13px;
+    color: var(--text); text-decoration: none;
+  }
+  .nav-menu a:hover { background: var(--field-bg); }
+
+  /* ---------- header ---------- */
+  .page-title { font-size: 21px; margin: 0 0 14px; text-align: center; }
+  .meta-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+    padding: 0 2px;
+  }
+  .quote-line { font-family: 'Nanum Myeongjo', serif; flex: 1; min-width: 0; }
+  .quote-line .q-text {
+    font-style: italic; font-size: 14.5px; color: var(--text); line-height: 1.5;
+  }
+  .quote-line .q-author { color: var(--text-muted); margin-top: 2px; font-size: 12px; }
+  .dday-line {
+    font-family: 'Nanum Myeongjo', serif; text-align: right; cursor: pointer; position: relative;
+    flex-shrink: 0;
+  }
+  .dday-line .d-num { font-size: 19px; font-weight: 800; color: var(--accent); }
+  .dday-line .d-label { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+  .dday-line .d-empty { font-size: 13px; color: var(--text-muted); font-style: italic; }
+  .dday-edit {
+    position: absolute; top: 100%; right: 0; margin-top: 8px;
+    width: 220px; padding: 14px; z-index: 20; text-align: left;
+    display: none;
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  }
   .dday-edit.show { display: block; }
-  .dday-edit label { display: block; font-size: 11.5px; color: var(--text-muted); margin: 8px 0 4px; }
+  .dday-edit label { display: block; font-size: 11.5px; color: var(--text-muted); margin: 8px 0 4px; font-family: inherit; }
   .dday-edit label:first-child { margin-top: 0; }
   .dday-edit input {
-    width: 100%; padding: 8px 10px; font-size: 13px;
+    width: 100%; padding: 8px 10px; font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
     background: var(--field-bg); border: 1px solid var(--border); border-radius: 8px;
     outline: none; color: var(--text);
   }
   .dday-edit .row { display: flex; gap: 6px; margin-top: 10px; }
   .dday-edit button {
     flex: 1; padding: 8px; font-size: 12.5px; font-weight: 700; border: none; border-radius: 8px; cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
   }
   .dday-edit .save-btn { background: var(--accent); color: #fff; }
   .dday-edit .cancel-btn { background: var(--field-bg); color: var(--text-muted); border: 1px solid var(--border); }
+  @media (max-width: 760px) {
+    .meta-row { flex-direction: column; text-align: center; }
+    .dday-line { text-align: center; align-self: center; }
+  }
 
   /* ---------- middle grid ---------- */
   .dash-grid {
@@ -134,9 +166,6 @@
   }
   @media (max-width: 760px) {
     .dash-grid { grid-template-columns: 1fr; }
-    .dash-header { grid-template-columns: 1fr; text-align: center; }
-    .dday-box { align-items: center; text-align: center; }
-    .quote-box { text-align: center; }
   }
   .panel { padding: 18px 18px 16px; max-height: 420px; display: flex; flex-direction: column; }
   .panel h2 { font-size: 14.5px; margin: 0 0 12px; color: var(--accent); display: flex; align-items: center; gap: 6px; }
@@ -190,6 +219,7 @@
 
   /* ---------- upload card ---------- */
   .upload-card { padding: 26px 24px 22px; }
+  .upload-inner { max-width: 440px; margin: 0 auto; }
   .upload-card .header { text-align: center; margin-bottom: 20px; }
   .upload-card .icon { font-size: 30px; line-height: 1; }
   .upload-card h2 { font-size: 17px; margin: 8px 0 4px; }
@@ -245,7 +275,6 @@
   #status.info { background: var(--info-bg); color: var(--info-text); }
   #status.success { background: var(--success-bg); color: var(--success-text); }
   #status.error { background: var(--error-bg); color: var(--error-text); }
-  .upload-card { max-width: 440px; margin: 0 auto; }
 </style>
 </head>
 <body>
@@ -260,16 +289,25 @@
   </div>
 </div>
 
+<button class="nav-icon-btn" id="navBtn" aria-label="메뉴">
+  <svg viewBox="0 0 20 20"><rect x="1" y="2" width="18" height="16" rx="3"></rect><line x1="8" y1="2" x2="8" y2="18" stroke="var(--text-muted)" stroke-width="1.6"></line></svg>
+</button>
+<div class="nav-menu" id="navMenu">
+  <a href="#scheduleCard">🗓️ 일정</a>
+  <a href="#materialsCard">📄 최신 자료</a>
+  <a href="#uploadCard">⬆️ 업로드</a>
+</div>
+
 <div class="wrap">
-  <header class="dash-header">
-    <div class="card quote-box" id="quoteBox">
+  <h1 class="page-title">📚 강의 자료 대시보드</h1>
+  <div class="meta-row">
+    <div class="quote-line" id="quoteBox">
       <div class="q-text">오늘의 한마디를 불러오는 중...</div>
     </div>
-    <h1>📚 강의 자료 대시보드</h1>
-    <div class="card dday-box" id="ddayBox">
+    <div class="dday-line" id="ddayBox">
       <div class="d-empty">불러오는 중...</div>
     </div>
-  </header>
+  </div>
 
   <main class="dash-grid">
     <section class="card panel" id="scheduleCard">
@@ -287,7 +325,8 @@
     </section>
   </main>
 
-  <section class="card upload-card">
+  <section class="card upload-card" id="uploadCard">
+    <div class="upload-inner">
     <div class="header">
       <div class="icon">⬆️</div>
       <h2>새 자료 업로드</h2>
@@ -328,6 +367,7 @@
       </button>
     </form>
     <p id="status"></p>
+    </div>
   </section>
 </div>
 
@@ -382,6 +422,18 @@ gateBtn.addEventListener('click', attemptGate);
 gateInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') attemptGate(); });
 
 document.querySelector('input[name="passcode"]').value = getPasscode();
+
+/* ---------- top-left quick nav ---------- */
+const navBtn = document.getElementById('navBtn');
+const navMenu = document.getElementById('navMenu');
+navBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  navMenu.classList.toggle('show');
+});
+navMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => navMenu.classList.remove('show')));
+document.addEventListener('click', (e) => {
+  if (!navMenu.contains(e.target) && e.target !== navBtn) navMenu.classList.remove('show');
+});
 
 (async function boot() {
   const saved = getPasscode();
