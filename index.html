@@ -141,7 +141,7 @@
   }
 
   /* ---------- top bar ---------- */
-  .top-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; padding-left: 46px; }
+  .top-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
   .brand { font-size: 19px; font-weight: 800; letter-spacing: 0.5px; color: var(--text); display: flex; align-items: center; gap: 8px; }
   .brand .brand-icon {
     width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
@@ -386,9 +386,9 @@
         <h2><span class="icon-badge indigo">🗓️</span> 일정</h2>
       </div>
       <div class="seg schedule-filter">
-        <button type="button" class="seg-btn active" data-filter="all">전체</button>
-        <button type="button" class="seg-btn" data-filter="overdue">지연</button>
-        <button type="button" class="seg-btn" data-filter="done">완료</button>
+        <button type="button" class="seg-btn" data-filter="overdue">미룬 일</button>
+        <button type="button" class="seg-btn active" data-filter="today">오늘</button>
+        <button type="button" class="seg-btn" data-filter="tomorrow">내일</button>
       </div>
       <div class="panel-body" id="scheduleBody">
         <div class="empty-msg">일정을 불러오는 중...</div>
@@ -581,7 +581,17 @@ function renderDday(label, dateStr) {
 
 /* ---------- schedule ---------- */
 let scheduleItemsCache = [];
-let scheduleFilter = 'all';
+let scheduleFilter = 'today';
+
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function tomorrowStr() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 async function loadSchedule(soft) {
   const data = await rpc('get_todo_snapshot', { p_passcode: getPasscode() }).catch(() => null);
@@ -593,14 +603,21 @@ async function loadSchedule(soft) {
   renderSchedule();
 }
 
+const SCHEDULE_EMPTY_MSG = {
+  overdue: '미룬 일이 없어요 🎉',
+  today: '오늘 할 일이 없어요 🎉',
+  tomorrow: '내일 예정된 일이 없어요'
+};
+
 function renderSchedule() {
   const body = document.getElementById('scheduleBody');
   let items = scheduleItemsCache;
   if (scheduleFilter === 'overdue') items = items.filter(it => it.overdue && !it.done);
-  else if (scheduleFilter === 'done') items = items.filter(it => it.done);
+  else if (scheduleFilter === 'today') items = items.filter(it => it.date === todayStr());
+  else if (scheduleFilter === 'tomorrow') items = items.filter(it => it.date === tomorrowStr());
 
   if (!items.length) {
-    body.innerHTML = `<div class="empty-msg">${scheduleFilter === 'all' ? '할 일이 없어요 🎉' : '해당하는 항목이 없어요'}</div>`;
+    body.innerHTML = `<div class="empty-msg">${SCHEDULE_EMPTY_MSG[scheduleFilter] || '해당하는 항목이 없어요'}</div>`;
     return;
   }
   body.innerHTML = items.map(it => `
@@ -716,6 +733,7 @@ function cssEscape(s) { return String(s).replace(/["\\]/g, '\\$&'); }
 
 /* ---------- init ---------- */
 let materialsPollTimer = null;
+let schedulePollTimer = null;
 
 function initDashboard() {
   loadDashboardMeta();
@@ -723,10 +741,12 @@ function initDashboard() {
   loadMaterials();
 
   rpc('fire_todo_sync', { p_passcode: getPasscode() }).catch(() => {});
-  setTimeout(() => loadSchedule(true), 4000);
 
   if (materialsPollTimer) clearInterval(materialsPollTimer);
   materialsPollTimer = setInterval(loadMaterials, 15000);
+
+  if (schedulePollTimer) clearInterval(schedulePollTimer);
+  schedulePollTimer = setInterval(() => loadSchedule(true), 10000);
 }
 
 /* ---------- upload form (unchanged behavior) ---------- */
