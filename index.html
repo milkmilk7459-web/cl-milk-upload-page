@@ -3,12 +3,35 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>강의 자료 대시보드</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+<title>MEUNPYO 대시보드</title>
 <style>
   :root {
+    --accent: #4C8DDA;
+    --accent-light: #6FA8E8;
+    --bg: #14181F;
+    --card-bg: #1D232C;
+    --text: #E7ECF2;
+    --text-muted: #97A2AF;
+    --border: #303A46;
+    --field-bg: #232B35;
+    --success-bg: #123321;
+    --success-text: #6FDB92;
+    --error-bg: #3A1717;
+    --error-text: #F29B95;
+    --info-bg: #17263B;
+    --info-text: #8FBBEE;
+    --warn-bg: #332905;
+    --warn-text: #F2C572;
+    --badge-indigo: #A499FA;
+    --badge-indigo-bg: #2A2447;
+    --badge-dark: #E7ECF2;
+    --badge-dark-bg: #2B323C;
+    --badge-orange: #F2B569;
+    --badge-orange-bg: #3A2C15;
+    --badge-green: #6FDB92;
+    --badge-green-bg: #163524;
+  }
+  :root[data-theme="light"] {
     --accent: #12406B;
     --accent-light: #1F5FA8;
     --bg: #F3F5F8;
@@ -25,42 +48,47 @@
     --info-text: #12406B;
     --warn-bg: #FFF6E5;
     --warn-text: #8A5B00;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --accent: #4C8DDA;
-      --accent-light: #6FA8E8;
-      --bg: #14181F;
-      --card-bg: #1D232C;
-      --text: #E7ECF2;
-      --text-muted: #97A2AF;
-      --border: #303A46;
-      --field-bg: #232B35;
-      --success-bg: #123321;
-      --success-text: #6FDB92;
-      --error-bg: #3A1717;
-      --error-text: #F29B95;
-      --info-bg: #17263B;
-      --info-text: #8FBBEE;
-      --warn-bg: #332905;
-      --warn-text: #F2C572;
-    }
+    --badge-indigo: #6C5CE7;
+    --badge-indigo-bg: #EFECFD;
+    --badge-dark: #1A2430;
+    --badge-dark-bg: #EAEBED;
+    --badge-orange: #E08A2C;
+    --badge-orange-bg: #FCEEDD;
+    --badge-green: #2E9E5B;
+    --badge-green-bg: #E4F5EA;
   }
   * { box-sizing: border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
     background: var(--bg);
+    background-image: radial-gradient(circle at 12% 0%, var(--badge-indigo-bg) 0%, transparent 45%),
+                       radial-gradient(circle at 90% 8%, var(--badge-orange-bg) 0%, transparent 40%),
+                       radial-gradient(circle at 100% 90%, var(--badge-green-bg) 0%, transparent 35%);
+    background-attachment: fixed;
     color: var(--text);
     margin: 0;
     padding: 24px 16px 64px;
     min-height: 100vh;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
-  .wrap { max-width: 1080px; margin: 0 auto; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding-left: 56px; }
+  @media (max-width: 760px) { .wrap { padding-left: 0; } }
   .card {
     background: var(--card-bg);
-    border-radius: 16px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06);
+    border-radius: 20px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 10px 28px rgba(0,0,0,0.05);
   }
+  .icon-badge {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .icon-badge.indigo { background: var(--badge-indigo-bg); color: var(--badge-indigo); }
+  .icon-badge.dark { background: var(--badge-dark-bg); color: var(--badge-dark); }
+  .icon-badge.orange { background: var(--badge-orange-bg); color: var(--badge-orange); }
+  .icon-badge.green { background: var(--badge-green-bg); color: var(--badge-green); }
+  .icon-badge.red { background: var(--error-bg); color: var(--error-text); }
+  .icon-badge.sm { width: 32px; height: 32px; font-size: 15px; }
 
   /* ---------- passcode gate ---------- */
   #gate {
@@ -70,7 +98,11 @@
   }
   #gate.hidden { display: none; }
   .gate-card { width: 100%; max-width: 340px; padding: 28px 24px; text-align: center; }
-  .gate-card .icon { font-size: 32px; }
+  .gate-card .icon {
+    font-size: 28px; width: 56px; height: 56px; border-radius: 50%; margin: 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--badge-indigo-bg), var(--badge-orange-bg));
+  }
   .gate-card h2 { font-size: 17px; margin: 10px 0 16px; }
   .gate-card input {
     width: 100%; padding: 11px 12px; font-size: 15px;
@@ -81,57 +113,69 @@
   .gate-card input:focus { border-color: var(--accent-light); }
   .gate-card button {
     width: 100%; margin-top: 12px; padding: 12px; font-size: 14px; font-weight: 700;
-    background: var(--accent); color: #fff; border: none; border-radius: 10px; cursor: pointer;
+    background: var(--badge-dark); color: var(--card-bg); border: none; border-radius: 14px; cursor: pointer;
   }
   .gate-err { color: var(--error-text); font-size: 12.5px; margin-top: 10px; display: none; }
 
-  /* ---------- top-left quick nav ---------- */
-  .nav-icon-btn {
-    position: fixed; top: 18px; left: 18px; z-index: 40;
+  /* ---------- top-left toggles + quick nav ---------- */
+  .side-toggles {
+    position: fixed; top: 18px; left: 18px; z-index: 41;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .side-nav {
+    position: fixed; top: 106px; left: 18px; z-index: 40;
+    display: flex; flex-direction: column; gap: 8px;
+    padding-top: 8px; border-top: 1px solid var(--border);
+  }
+  .theme-btn, .side-nav a {
     width: 36px; height: 36px; padding: 0;
     display: flex; align-items: center; justify-content: center;
     background: var(--card-bg); border: 1px solid var(--border); border-radius: 9px;
     cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    font-size: 15px; color: var(--text-muted); text-decoration: none;
   }
-  .nav-icon-btn svg { width: 16px; height: 16px; }
-  .nav-icon-btn rect { fill: none; stroke: var(--text-muted); stroke-width: 1.6; }
-  .nav-menu {
-    position: fixed; top: 60px; left: 18px; z-index: 40;
-    background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.12); padding: 8px; min-width: 140px;
-    display: none;
+  .theme-btn.active { background: var(--badge-indigo-bg); color: var(--badge-indigo); border-color: var(--badge-indigo); }
+  .side-nav a:hover { background: var(--field-bg); color: var(--badge-indigo); border-color: var(--badge-indigo); }
+  @media (max-width: 760px) {
+    .side-toggles, .side-nav { display: none; }
   }
-  .nav-menu.show { display: block; }
-  .nav-menu a {
-    display: block; padding: 8px 10px; border-radius: 8px; font-size: 13px;
-    color: var(--text); text-decoration: none;
+
+  /* ---------- top bar ---------- */
+  .top-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; padding-left: 46px; }
+  .brand { font-size: 19px; font-weight: 800; letter-spacing: 0.5px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .brand .brand-icon {
+    width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    background: var(--badge-dark); color: var(--card-bg); font-size: 15px; font-weight: 800;
   }
-  .nav-menu a:hover { background: var(--field-bg); }
 
   /* ---------- header ---------- */
-  .page-title { font-size: 23px; font-weight: 800; margin: 4px 0 34px; text-align: center; }
-  .meta-row {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 18px;
-    padding: 0 2px;
+  .quote-banner {
+    text-align: left;
+    padding: 22px 26px; margin-bottom: 20px;
   }
-  .quote-line { font-family: 'Nanum Myeongjo', serif; flex: 1; min-width: 0; }
-  .quote-line .q-text {
-    font-style: italic; font-size: 14.5px; color: var(--text); line-height: 1.5;
+  .quote-banner .q-text { font-weight: 800; font-size: 22px; color: var(--text); line-height: 1.4; }
+  .quote-banner .q-author { color: var(--text-muted); margin-top: 6px; font-size: 14px; font-weight: 400; }
+
+  /* ---------- stat row ---------- */
+  .stat-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px;
   }
-  .quote-line .q-author { color: var(--text-muted); margin-top: 2px; font-size: 12px; }
-  .dday-line {
-    font-family: 'Nanum Myeongjo', serif; text-align: right; cursor: pointer; position: relative;
-    flex-shrink: 0;
+  @media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .stat-grid { grid-template-columns: 1fr; } }
+  .stat-card { padding: 16px 18px; position: relative; }
+  .stat-card.dday { cursor: pointer; }
+  .stat-top { margin-bottom: 12px; }
+  .stat-num {
+    font-size: 22px; font-weight: 800;
+    background: linear-gradient(90deg, var(--badge-orange), var(--error-text));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
   }
-  .dday-line .d-num { font-size: 19px; font-weight: 800; color: var(--accent); }
-  .dday-line .d-label { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
-  .dday-line .d-empty { font-size: 13px; color: var(--text-muted); font-style: italic; }
+  .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .stat-empty { font-size: 12.5px; color: var(--text-muted); font-style: italic; }
+  .stat-card.placeholder { opacity: 0.55; }
+  .stat-card.placeholder .stat-num { font-size: 22px; font-weight: 800; color: var(--text-muted); background: none; -webkit-text-fill-color: initial; }
   .dday-edit {
-    position: absolute; top: 100%; right: 0; margin-top: 8px;
+    position: absolute; top: 100%; left: 0; margin-top: 8px;
     width: 220px; padding: 14px; z-index: 20; text-align: left;
     display: none;
     background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
@@ -147,15 +191,11 @@
   }
   .dday-edit .row { display: flex; gap: 6px; margin-top: 10px; }
   .dday-edit button {
-    flex: 1; padding: 8px; font-size: 12.5px; font-weight: 700; border: none; border-radius: 8px; cursor: pointer;
+    flex: 1; padding: 8px; font-size: 12.5px; font-weight: 700; border: none; border-radius: 10px; cursor: pointer;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
   }
-  .dday-edit .save-btn { background: var(--accent); color: #fff; }
+  .dday-edit .save-btn { background: var(--badge-dark); color: var(--card-bg); }
   .dday-edit .cancel-btn { background: var(--field-bg); color: var(--text-muted); border: 1px solid var(--border); }
-  @media (max-width: 760px) {
-    .meta-row { flex-direction: column; text-align: center; }
-    .dday-line { text-align: center; align-self: center; }
-  }
 
   /* ---------- middle grid ---------- */
   .dash-grid {
@@ -167,10 +207,12 @@
   @media (max-width: 760px) {
     .dash-grid { grid-template-columns: 1fr; }
   }
-  .panel { padding: 18px 18px 16px; max-height: 420px; display: flex; flex-direction: column; }
-  .panel h2 { font-size: 14.5px; margin: 0 0 12px; color: var(--accent); display: flex; align-items: center; gap: 6px; }
+  .panel { padding: 20px 20px 18px; max-height: 560px; min-height: 420px; display: flex; flex-direction: column; }
+  .panel-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .panel h2 { font-size: 15px; margin: 0; color: var(--text); font-weight: 700; display: flex; align-items: center; gap: 12px; }
   .panel-body { overflow-y: auto; flex: 1; }
   .empty-msg { color: var(--text-muted); font-size: 13px; padding: 20px 4px; text-align: center; }
+  .schedule-filter { margin-bottom: 12px; }
 
   /* schedule */
   .todo-item {
@@ -179,11 +221,12 @@
   }
   .todo-item:last-child { border-bottom: none; }
   .todo-check {
-    width: 19px; height: 19px; border-radius: 50%; border: 2px solid var(--border);
+    width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--badge-indigo);
+    opacity: 0.5;
     flex-shrink: 0; margin-top: 1px; cursor: pointer; display: flex; align-items: center; justify-content: center;
     font-size: 11px; color: transparent; transition: all 0.15s ease;
   }
-  .todo-check.done { background: var(--success-text); border-color: var(--success-text); color: #fff; }
+  .todo-check.done { background: var(--success-text); border-color: var(--success-text); color: #fff; opacity: 1; }
   .todo-text { flex: 1; font-size: 13.5px; line-height: 1.4; }
   .todo-item.done .todo-text { color: var(--text-muted); text-decoration: line-through; }
   .todo-date { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
@@ -192,23 +235,29 @@
     background: var(--error-bg); padding: 1px 6px; border-radius: 6px; margin-left: 6px;
   }
 
-  /* materials */
-  .subject-group { margin-bottom: 14px; }
-  .subject-group:last-child { margin-bottom: 0; }
-  .subject-title { font-size: 12.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
-  .material-item { padding: 9px 4px; border-bottom: 1px solid var(--border); }
-  .material-item:last-child { border-bottom: none; }
-  .material-title { font-size: 13.5px; font-weight: 600; }
-  .material-links { margin-top: 5px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  /* materials as activity feed */
+  .activity-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 4px; border-bottom: 1px solid var(--border);
+  }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-text { font-size: 13.5px; line-height: 1.4; }
+  .activity-text b { font-weight: 700; }
+  .activity-time { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .material-links { margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .material-links a, .material-links button {
     font-size: 12px; font-weight: 600; text-decoration: none;
-    padding: 4px 10px; border-radius: 7px; border: none; cursor: pointer;
+    padding: 5px 12px; border-radius: 999px; border: none; cursor: pointer;
   }
   .link-material { background: var(--info-bg); color: var(--info-text); }
   .link-quiz { background: var(--field-bg); color: var(--text); border: 1px solid var(--border) !important; }
-  .link-take { background: var(--accent); color: #fff; }
+  .link-take { background: var(--badge-dark); color: var(--card-bg); }
   .status-badge {
-    font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px;
+    font-size: 11px; font-weight: 700; padding: 3px 10px 3px 8px; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .status-badge::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0;
   }
   .status-badge.progress { background: var(--warn-bg); color: var(--warn-text); }
   .status-badge.failed { background: var(--error-bg); color: var(--error-text); }
@@ -217,19 +266,20 @@
   }
   .progress-bar-inner { height: 100%; background: var(--accent-light); border-radius: 2px; transition: width 0.3s ease; }
 
-  /* ---------- upload card ---------- */
-  .upload-card { padding: 26px 24px 22px; }
-  .upload-inner { max-width: 440px; margin: 0 auto; }
-  .upload-card .header { text-align: center; margin-bottom: 20px; }
-  .upload-card .icon { font-size: 30px; line-height: 1; }
-  .upload-card h2 { font-size: 17px; margin: 8px 0 4px; }
-  .upload-card .subtitle { font-size: 13px; color: var(--text-muted); margin: 0; }
+  /* ---------- upload card (merged, wide) ---------- */
+  .upload-card { padding: 26px 28px 26px; }
+  .upload-card .header { text-align: left; margin-bottom: 22px; }
+  .upload-card .header h2 { font-size: 16px; margin: 0; display: flex; align-items: center; gap: 12px; font-weight: 700; }
+  .upload-card .subtitle { font-size: 13px; color: var(--text-muted); margin: 6px 0 0 52px; }
+  .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
+  .upload-grid .field.full { grid-column: 1 / -1; }
+  @media (max-width: 700px) { .upload-grid { grid-template-columns: 1fr; } }
   fieldset { border: none; padding: 0; margin: 0; }
   label {
     display: block; font-size: 13px; font-weight: 600; color: var(--text-muted);
     margin-top: 18px; margin-bottom: 6px;
   }
-  label:first-of-type { margin-top: 0; }
+  .upload-grid .field:nth-child(-n+2) label { margin-top: 0; }
   .hint { font-weight: 400; color: var(--text-muted); font-size: 12px; }
   input[type="text"], input[type="password"], input:not([type]) {
     width: 100%; padding: 11px 12px; font-size: 15px; color: var(--text);
@@ -253,10 +303,10 @@
     width: auto; flex: 1; margin: 0; padding: 8px 6px; font-size: 12.5px; font-weight: 600;
     background: transparent; color: var(--text-muted); border: none; border-radius: 7px; cursor: pointer; display: block;
   }
-  .seg-btn.active { background: var(--card-bg); color: var(--accent); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+  .seg-btn.active { background: var(--card-bg); color: var(--badge-indigo); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
   .upload-card button[type="submit"] {
-    width: 100%; margin-top: 26px; padding: 14px; font-size: 15px; font-weight: 700;
-    background: var(--accent); color: #fff; border: none; border-radius: 10px; cursor: pointer;
+    width: 100%; max-width: 320px; margin: 26px auto 0; padding: 15px; font-size: 15px; font-weight: 700;
+    background: var(--badge-dark); color: var(--card-bg); border: none; border-radius: 14px; cursor: pointer;
     display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.15s ease;
   }
   .upload-card button[type="submit"]:hover:not(:disabled) { opacity: 0.92; }
@@ -289,36 +339,66 @@
   </div>
 </div>
 
-<button class="nav-icon-btn" id="navBtn" aria-label="메뉴">
-  <svg viewBox="0 0 20 20"><rect x="1" y="2" width="18" height="16" rx="3"></rect><line x1="8" y1="2" x2="8" y2="18" stroke="var(--text-muted)" stroke-width="1.6"></line></svg>
-</button>
-<div class="nav-menu" id="navMenu">
-  <a href="#scheduleCard">🗓️ 일정</a>
-  <a href="#materialsCard">📄 최신 자료</a>
-  <a href="#uploadCard">⬆️ 업로드</a>
+<div class="side-toggles">
+  <button class="theme-btn" id="themeLightBtn" aria-label="라이트 모드">☀️</button>
+  <button class="theme-btn active" id="themeDarkBtn" aria-label="다크 모드">🌙</button>
+</div>
+<div class="side-nav">
+  <a href="#scheduleCard" title="일정">🗓️</a>
+  <a href="#materialsCard" title="최신 자료">📄</a>
+  <a href="#uploadCard" title="업로드">⬆️</a>
 </div>
 
 <div class="wrap">
-  <h1 class="page-title">📚 강의 자료 대시보드</h1>
-  <div class="meta-row">
-    <div class="quote-line" id="quoteBox">
-      <div class="q-text">오늘의 한마디를 불러오는 중...</div>
+  <div class="top-bar">
+    <div class="brand"><span class="brand-icon">M</span> MEUNPYO</div>
+  </div>
+
+  <div class="card quote-banner" id="quoteBox">
+    <div class="q-text">오늘의 한마디를 불러오는 중...</div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="card stat-card dday" id="ddayBox">
+      <div class="stat-top"><span class="icon-badge orange sm">📅</span></div>
+      <div class="stat-empty">불러오는 중...</div>
     </div>
-    <div class="dday-line" id="ddayBox">
-      <div class="d-empty">불러오는 중...</div>
+    <div class="card stat-card placeholder">
+      <div class="stat-top"><span class="icon-badge indigo sm">📁</span></div>
+      <div class="stat-num">—</div>
+      <div class="stat-label">준비 중</div>
+    </div>
+    <div class="card stat-card placeholder">
+      <div class="stat-top"><span class="icon-badge dark sm">💬</span></div>
+      <div class="stat-num">—</div>
+      <div class="stat-label">준비 중</div>
+    </div>
+    <div class="card stat-card placeholder">
+      <div class="stat-top"><span class="icon-badge green sm">⏱️</span></div>
+      <div class="stat-num">—</div>
+      <div class="stat-label">준비 중</div>
     </div>
   </div>
 
   <main class="dash-grid">
     <section class="card panel" id="scheduleCard">
-      <h2>🗓️ 일정</h2>
+      <div class="panel-header-row">
+        <h2><span class="icon-badge indigo">🗓️</span> 일정</h2>
+      </div>
+      <div class="seg schedule-filter">
+        <button type="button" class="seg-btn active" data-filter="all">전체</button>
+        <button type="button" class="seg-btn" data-filter="overdue">지연</button>
+        <button type="button" class="seg-btn" data-filter="done">완료</button>
+      </div>
       <div class="panel-body" id="scheduleBody">
         <div class="empty-msg">일정을 불러오는 중...</div>
       </div>
     </section>
 
     <section class="card panel" id="materialsCard">
-      <h2>📄 최신 자료</h2>
+      <div class="panel-header-row">
+        <h2><span class="icon-badge dark">📄</span> 최신 자료</h2>
+      </div>
       <div class="panel-body" id="materialsBody">
         <div class="empty-msg">자료 목록을 불러오는 중...</div>
       </div>
@@ -326,48 +406,44 @@
   </main>
 
   <section class="card upload-card" id="uploadCard">
-    <div class="upload-inner">
     <div class="header">
-      <div class="icon">⬆️</div>
-      <h2>새 자료 업로드</h2>
+      <h2><span class="icon-badge orange">⬆️</span> 새 자료 업로드</h2>
       <p class="subtitle">녹음과 교안을 올리면 학습자료 · 문제지가 자동으로 만들어져요</p>
     </div>
     <form id="f">
-      <fieldset>
-        <label>과목명</label>
-        <input name="subject" placeholder="예: 병리학, 약리학" required>
-
-        <label>주차</label>
-        <input name="week" placeholder="예: 2주차, 3주차" required>
-
-        <label>회차 <span class="hint">(한 주에 수업이 여러 번이면, 선택)</span></label>
-        <input name="session" placeholder="예: 1회, 2회">
-
-        <label>녹음 STT</label>
-        <div class="seg">
-          <button type="button" class="seg-btn active" data-txt-mode="file">파일 업로드 (.txt)</button>
-          <button type="button" class="seg-btn" data-txt-mode="text">직접 입력</button>
+      <div class="upload-grid">
+        <div class="field">
+          <label>과목명</label>
+          <input name="subject" placeholder="예: 병리학, 약리학" required>
         </div>
-        <div id="txtFilePanel" style="margin-top:8px;">
-          <input name="txt" type="file" accept=".txt" required>
+        <div class="field">
+          <label>주차</label>
+          <input name="week" placeholder="예: 2주차, 3주차" required>
         </div>
-        <div id="txtTextPanel" style="margin-top:8px; display:none;">
-          <textarea name="txtText" rows="6" placeholder="녹음 내용을 여기에 붙여넣거나 직접 입력하세요"></textarea>
+        <div class="field full">
+          <label>녹음 STT</label>
+          <div class="seg">
+            <button type="button" class="seg-btn active" data-txt-mode="file">파일 업로드 (.txt)</button>
+            <button type="button" class="seg-btn" data-txt-mode="text">직접 입력</button>
+          </div>
+          <div id="txtFilePanel" style="margin-top:8px;">
+            <input name="txt" type="file" accept=".txt" required>
+          </div>
+          <div id="txtTextPanel" style="margin-top:8px; display:none;">
+            <textarea name="txtText" rows="6" placeholder="녹음 내용을 여기에 붙여넣거나 직접 입력하세요"></textarea>
+          </div>
         </div>
-
-        <label>교안 <span class="hint">(.pdf)</span></label>
-        <input name="pdf" type="file" accept=".pdf" required>
-
-        <label>Passcode</label>
-        <input name="passcode" type="password" autocomplete="current-password" required>
-      </fieldset>
+        <div class="field full">
+          <label>교안 <span class="hint">(.pdf)</span></label>
+          <input name="pdf" type="file" accept=".pdf" required>
+        </div>
+      </div>
       <button type="submit" id="submitBtn">
         <span class="spinner"></span>
         <span id="submitLabel">업로드</span>
       </button>
     </form>
     <p id="status"></p>
-    </div>
   </section>
 </div>
 
@@ -376,6 +452,7 @@ const SUPABASE_URL = 'https://osvnjxfiuahtfexhensz.supabase.co';
 const PUBLISHABLE_KEY = 'sb_publishable_zQmnrQjdZtkx-KNkGuX9fg_sivRsRLs';
 const UPLOAD_BUCKET = 'lecture-uploads';
 const PASSCODE_KEY = 'cl_milk_passcode';
+const THEME_KEY = 'cl_milk_theme';
 
 function rpc(name, body) {
   return fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
@@ -390,6 +467,17 @@ function rpc(name, body) {
 }
 
 function getPasscode() { return localStorage.getItem(PASSCODE_KEY) || ''; }
+
+/* ---------- theme (default: dark) ---------- */
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('themeLightBtn').classList.toggle('active', theme === 'light');
+  document.getElementById('themeDarkBtn').classList.toggle('active', theme === 'dark');
+  localStorage.setItem(THEME_KEY, theme);
+}
+applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
+document.getElementById('themeLightBtn').addEventListener('click', () => applyTheme('light'));
+document.getElementById('themeDarkBtn').addEventListener('click', () => applyTheme('dark'));
 
 /* ---------- passcode gate ---------- */
 const gateEl = document.getElementById('gate');
@@ -421,20 +509,6 @@ async function attemptGate() {
 gateBtn.addEventListener('click', attemptGate);
 gateInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') attemptGate(); });
 
-document.querySelector('input[name="passcode"]').value = getPasscode();
-
-/* ---------- top-left quick nav ---------- */
-const navBtn = document.getElementById('navBtn');
-const navMenu = document.getElementById('navMenu');
-navBtn.addEventListener('click', (e) => {
-  e.stopPropagation();
-  navMenu.classList.toggle('show');
-});
-navMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => navMenu.classList.remove('show')));
-document.addEventListener('click', (e) => {
-  if (!navMenu.contains(e.target) && e.target !== navBtn) navMenu.classList.remove('show');
-});
-
 (async function boot() {
   const saved = getPasscode();
   if (saved && await tryUnlock(saved).catch(() => false)) {
@@ -453,7 +527,7 @@ async function loadDashboardMeta() {
   const ddayBox = document.getElementById('ddayBox');
   if (!data || !data.ok) {
     quoteBox.innerHTML = '<div class="q-text">오늘의 한마디를 불러오지 못했어요</div>';
-    ddayBox.innerHTML = '<div class="d-empty">-</div>';
+    ddayBox.innerHTML = '<div class="stat-empty">-</div>';
     return;
   }
   if (data.quote) {
@@ -467,15 +541,15 @@ async function loadDashboardMeta() {
 
 function renderDday(label, dateStr) {
   const ddayBox = document.getElementById('ddayBox');
-  let inner;
+  let inner = `<div class="stat-top"><span class="icon-badge orange sm">📅</span></div>`;
   if (dateStr) {
     const today = new Date();
     const target = new Date(dateStr + 'T00:00:00');
     const diffDays = Math.round((target - new Date(today.getFullYear(), today.getMonth(), today.getDate())) / 86400000);
     const dText = diffDays === 0 ? 'D-DAY' : (diffDays > 0 ? `D-${diffDays}` : `D+${-diffDays}`);
-    inner = `<div class="d-num">${dText}</div><div class="d-label">${escapeHtml(label || '')}</div>`;
+    inner += `<div class="stat-num">${dText}</div><div class="stat-label">${escapeHtml(label || '')}</div>`;
   } else {
-    inner = '<div class="d-empty">디데이 설정 +</div>';
+    inner += '<div class="stat-empty">디데이 설정 +</div>';
   }
   ddayBox.innerHTML = inner + `
     <div class="dday-edit" id="ddayEdit">
@@ -506,19 +580,27 @@ function renderDday(label, dateStr) {
 }
 
 /* ---------- schedule ---------- */
+let scheduleItemsCache = [];
+let scheduleFilter = 'all';
+
 async function loadSchedule(soft) {
   const data = await rpc('get_todo_snapshot', { p_passcode: getPasscode() }).catch(() => null);
   if (!data || !data.ok) {
     if (!soft) document.getElementById('scheduleBody').innerHTML = '<div class="empty-msg">일정을 불러오지 못했어요</div>';
     return;
   }
-  renderSchedule(data.items || []);
+  scheduleItemsCache = data.items || [];
+  renderSchedule();
 }
 
-function renderSchedule(items) {
+function renderSchedule() {
   const body = document.getElementById('scheduleBody');
+  let items = scheduleItemsCache;
+  if (scheduleFilter === 'overdue') items = items.filter(it => it.overdue && !it.done);
+  else if (scheduleFilter === 'done') items = items.filter(it => it.done);
+
   if (!items.length) {
-    body.innerHTML = '<div class="empty-msg">할 일이 없어요 🎉</div>';
+    body.innerHTML = `<div class="empty-msg">${scheduleFilter === 'all' ? '할 일이 없어요 🎉' : '해당하는 항목이 없어요'}</div>`;
     return;
   }
   body.innerHTML = items.map(it => `
@@ -535,6 +617,14 @@ function renderSchedule(items) {
   });
 }
 
+document.querySelectorAll('.schedule-filter .seg-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    scheduleFilter = btn.dataset.filter;
+    document.querySelectorAll('.schedule-filter .seg-btn').forEach(b => b.classList.toggle('active', b === btn));
+    renderSchedule();
+  });
+});
+
 async function toggleTodo(id) {
   const row = document.querySelector(`.todo-item[data-id="${cssEscape(id)}"]`);
   const check = document.querySelector(`.todo-check[data-id="${cssEscape(id)}"]`);
@@ -542,11 +632,13 @@ async function toggleTodo(id) {
   check.classList.toggle('done', newDone);
   check.textContent = newDone ? '✓' : '';
   row.classList.toggle('done', newDone);
+  const cached = scheduleItemsCache.find(it => String(it.id) === String(id));
+  if (cached) cached.done = newDone;
   await rpc('toggle_todo_item_local', { p_todo_id: id, p_done: newDone, p_passcode: getPasscode() }).catch(() => {});
   rpc('fire_todo_toggle', { p_todo_id: id, p_done: newDone, p_passcode: getPasscode() }).catch(() => {});
 }
 
-/* ---------- materials ---------- */
+/* ---------- materials (as activity feed) ---------- */
 const STAGE_LABEL = {
   queued: '대기 중', downloading: '자료 받는 중', generating: '자료 만드는 중',
   uploading: '업로드 중', done: '완료', failed: '실패'
@@ -565,45 +657,53 @@ function renderMaterials(rows) {
     body.innerHTML = '<div class="empty-msg">아직 업로드된 자료가 없어요</div>';
     return;
   }
-  const groups = {};
-  rows.forEach(r => {
-    (groups[r.subject] = groups[r.subject] || []).push(r);
-  });
-  body.innerHTML = Object.keys(groups).map(subject => `
-    <div class="subject-group">
-      <div class="subject-title">${escapeHtml(subject)}</div>
-      ${groups[subject].map(materialItemHtml).join('')}
-    </div>
-  `).join('');
+  body.innerHTML = rows.map(materialItemHtml).join('');
+}
+
+function relativeTime(iso) {
+  if (!iso) return '';
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diffMs / 60000);
+  if (min < 1) return '방금 전';
+  if (min < 60) return `${min}분 전`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}시간 전`;
+  const day = Math.floor(hr / 24);
+  return `${day}일 전`;
 }
 
 function materialItemHtml(r) {
-  const title = `${escapeHtml(r.week)}${r.session ? ' ' + escapeHtml(r.session) : ''}`;
+  const title = `${escapeHtml(r.subject)} ${escapeHtml(r.week)}${r.session ? ' ' + escapeHtml(r.session) : ''}`;
+  const time = relativeTime(r.updated_at);
+  let iconClass = 'orange', icon = '⏳', text = `<b>${title}</b> ${escapeHtml(STAGE_LABEL[r.status] || r.status)} 중이에요`;
+  let extra = '';
+
   if (r.status === 'done') {
-    return `
-      <div class="material-item">
-        <div class="material-title">${title}</div>
-        <div class="material-links">
-          ${r.material_url ? `<a class="link-material" href="${escapeAttr(r.material_url)}" target="_blank" rel="noopener">학습자료</a>` : ''}
-          ${r.quiz_url ? `<a class="link-quiz" href="${escapeAttr(r.quiz_url)}" target="_blank" rel="noopener">문제지</a>` : ''}
-          <a class="link-take" href="quiz.html?id=${encodeURIComponent(r.id)}">응시</a>
-        </div>
-      </div>`;
+    iconClass = 'green'; icon = '✅';
+    text = `<b>${title}</b> 학습자료가 완성됐어요`;
+    extra = `<div class="material-links">
+      ${r.material_url ? `<a class="link-material" href="${escapeAttr(r.material_url)}" target="_blank" rel="noopener">학습자료</a>` : ''}
+      ${r.quiz_url ? `<a class="link-quiz" href="${escapeAttr(r.quiz_url)}" target="_blank" rel="noopener">문제지</a>` : ''}
+      <a class="link-take" href="quiz.html?id=${encodeURIComponent(r.id)}">응시</a>
+    </div>`;
+  } else if (r.status === 'failed') {
+    iconClass = 'red'; icon = '⚠️';
+    text = `<b>${title}</b> 처리에 실패했어요`;
+    extra = `<div class="material-links"><span class="status-badge failed">실패</span></div>` +
+      (r.error ? `<div class="todo-date">${escapeHtml(r.error)}</div>` : '');
+  } else {
+    const pct = STAGE_PROGRESS[r.status] || 10;
+    extra = `<div class="progress-bar-outer"><div class="progress-bar-inner" style="width:${pct}%"></div></div>`;
   }
-  if (r.status === 'failed') {
-    return `
-      <div class="material-item">
-        <div class="material-title">${title}</div>
-        <div class="material-links"><span class="status-badge failed">실패</span></div>
-        ${r.error ? `<div class="todo-date">${escapeHtml(r.error)}</div>` : ''}
-      </div>`;
-  }
-  const pct = STAGE_PROGRESS[r.status] || 10;
+
   return `
-    <div class="material-item">
-      <div class="material-title">${title}</div>
-      <div class="material-links"><span class="status-badge progress">처리 중입니다 · ${STAGE_LABEL[r.status] || r.status}</span></div>
-      <div class="progress-bar-outer"><div class="progress-bar-inner" style="width:${pct}%"></div></div>
+    <div class="activity-item">
+      <div class="icon-badge ${iconClass} sm">${icon}</div>
+      <div style="flex:1; min-width:0;">
+        <div class="activity-text">${text}</div>
+        <div class="activity-time">${time}</div>
+        ${extra}
+      </div>
     </div>`;
 }
 
@@ -701,13 +801,11 @@ document.getElementById('f').addEventListener('submit', async (e) => {
     ]);
     label.textContent = '처리 요청 중...';
     setStatus('info', '학습자료 생성을 요청하고 있어요...');
-    const passcode = form.passcode.value;
-    localStorage.setItem(PASSCODE_KEY, passcode);
     const payload = {
       p_subject: form.subject.value,
       p_week: form.week.value,
-      p_session: form.session.value,
-      p_passcode: passcode,
+      p_session: '',
+      p_passcode: getPasscode(),
       p_txt_name: txtName,
       p_txt_url: txtUrl,
       p_pdf_name: pdfFile.name,
@@ -726,7 +824,6 @@ document.getElementById('f').addEventListener('submit', async (e) => {
     if (res.ok && data.ok) {
       setStatus('success', '요청 완료! 처리가 끝나면 카카오톡으로 알려드릴게요.\n(' + (data.stage || '') + ')');
       form.reset();
-      form.passcode.value = passcode;
       loadMaterials();
     } else {
       setStatus('error', '오류 (' + (data.stage || res.status) + '): ' + (data.error || data.detail || res.status));
