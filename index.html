@@ -565,7 +565,9 @@ document.getElementById('themeDarkBtn').addEventListener('click', () => applyThe
 
 /* ---------- quote + d-day ---------- */
 async function loadDashboardMeta() {
-  const data = await rpc('get_dashboard_meta', { p_passcode: getPasscode() }).catch(() => null);
+  const acc = currentAccount;
+  const data = await rpc('get_dashboard_meta', { p_passcode: getPasscode(), p_account: acc }).catch(() => null);
+  if (acc !== currentAccount) return;
   const quoteBox = document.getElementById('quoteBox');
   const ddayBox = document.getElementById('ddayBox');
   if (!data || !data.ok) {
@@ -617,7 +619,7 @@ function renderDday(label, dateStr) {
     e.stopPropagation();
     const newLabel = document.getElementById('ddayLabelInput').value.trim();
     const newDate = document.getElementById('ddayDateInput').value;
-    await rpc('set_d_day', { p_label: newLabel, p_date: newDate || null, p_passcode: getPasscode() }).catch(() => {});
+    await rpc('set_d_day', { p_label: newLabel, p_date: newDate || null, p_passcode: getPasscode(), p_account: currentAccount }).catch(() => {});
     loadDashboardMeta();
   };
 }
@@ -637,6 +639,7 @@ function switchAccount(acc) {
   document.querySelectorAll('.schedule-filter .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === 'today'));
   document.getElementById('scheduleBody').innerHTML = '<div class="empty-msg">일정을 불러오는 중...</div>';
   document.getElementById('materialsBody').innerHTML = '<div class="empty-msg">자료 목록을 불러오는 중...</div>';
+  loadDashboardMeta();
   loadSchedule(false);
   loadMaterials();
   rpc('fire_todo_sync', { p_passcode: getPasscode(), p_account: currentAccount }).catch(() => {});
