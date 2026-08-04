@@ -125,8 +125,8 @@
     padding: 6px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   }
-  .side-toggles { top: 18px; }
-  .side-nav { top: 148px; z-index: 40; }
+  .side-toggles { top: 130px; will-change: transform; }
+  .side-nav { top: 250px; z-index: 40; will-change: transform; }
   .theme-btn, .side-nav a {
     width: 36px; height: 36px; padding: 0;
     display: flex; align-items: center; justify-content: center;
@@ -212,7 +212,21 @@
   .panel h2 { font-size: 15px; margin: 0; color: var(--text); font-weight: 700; display: flex; align-items: center; gap: 12px; }
   .panel-body { overflow-y: auto; flex: 1; }
   .empty-msg { color: var(--text-muted); font-size: 13px; padding: 20px 4px; text-align: center; }
-  .schedule-filter { margin-bottom: 12px; }
+  .schedule-filter { margin-bottom: 10px; }
+  .add-todo-row { display: flex; gap: 6px; margin-bottom: 12px; }
+  .add-todo-row input {
+    flex: 1; padding: 8px 12px; font-size: 13px; color: var(--text);
+    background: var(--field-bg); border: 1px solid var(--border); border-radius: 999px;
+    outline: none; transition: border-color 0.15s ease;
+  }
+  .add-todo-row input:focus { border-color: var(--badge-indigo); }
+  .add-todo-row button {
+    width: 34px; height: 34px; flex-shrink: 0; padding: 0;
+    background: var(--badge-dark); color: var(--card-bg); border: none; border-radius: 50%;
+    font-size: 18px; font-weight: 700; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .add-todo-row button:hover { opacity: 0.9; }
 
   /* schedule */
   .todo-item {
@@ -390,6 +404,10 @@
         <button type="button" class="seg-btn active" data-filter="today">오늘</button>
         <button type="button" class="seg-btn" data-filter="tomorrow">내일</button>
       </div>
+      <div class="add-todo-row">
+        <input type="text" id="addTodoInput" placeholder="오늘 할 일 추가...">
+        <button type="button" id="addTodoBtn" aria-label="추가">+</button>
+      </div>
       <div class="panel-body" id="scheduleBody">
         <div class="empty-msg">일정을 불러오는 중...</div>
       </div>
@@ -478,6 +496,21 @@ function applyTheme(theme) {
 applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
 document.getElementById('themeLightBtn').addEventListener('click', () => applyTheme('light'));
 document.getElementById('themeDarkBtn').addEventListener('click', () => applyTheme('dark'));
+
+/* ---------- side icons: lagging scroll-follow (Apple-style) ---------- */
+(function(){
+  const groups = [document.querySelector('.side-toggles'), document.querySelector('.side-nav')].filter(Boolean);
+  if (!groups.length) return;
+  let current = 0;
+  function tick() {
+    const target = Math.min(window.scrollY * 0.1, 70);
+    current += (target - current) * 0.07;
+    const y = Math.round(current * 100) / 100;
+    groups.forEach(g => { g.style.transform = `translateY(${y}px)`; });
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
 
 /* ---------- passcode gate ---------- */
 const gateEl = document.getElementById('gate');
@@ -654,6 +687,24 @@ async function toggleTodo(id) {
   await rpc('toggle_todo_item_local', { p_todo_id: id, p_done: newDone, p_passcode: getPasscode() }).catch(() => {});
   rpc('fire_todo_toggle', { p_todo_id: id, p_done: newDone, p_passcode: getPasscode() }).catch(() => {});
 }
+
+const addTodoInput = document.getElementById('addTodoInput');
+const addTodoBtn = document.getElementById('addTodoBtn');
+
+async function addTodoItem() {
+  const title = addTodoInput.value.trim();
+  if (!title) return;
+  addTodoInput.value = '';
+  const dateStr = todayStr();
+  const res = await rpc('add_todo_item_local', { p_title: title, p_date: dateStr, p_passcode: getPasscode() }).catch(() => null);
+  if (res && res.ok) {
+    scheduleItemsCache.push({ id: res.id, title, date: dateStr, done: false, overdue: false });
+    renderSchedule();
+  }
+  rpc('fire_todo_add', { p_title: title, p_date: dateStr, p_passcode: getPasscode() }).catch(() => {});
+}
+addTodoBtn.addEventListener('click', addTodoItem);
+addTodoInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addTodoItem(); });
 
 /* ---------- materials (as activity feed) ---------- */
 const STAGE_LABEL = {
