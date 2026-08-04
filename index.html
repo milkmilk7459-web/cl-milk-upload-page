@@ -649,6 +649,7 @@ document.querySelectorAll('.account-tab').forEach(card => {
 let scheduleItemsCache = [];
 let goalsCache = [];
 let scheduleFilter = 'today';
+let openRemindId = null;
 
 function todayStr() {
   const d = new Date();
@@ -679,6 +680,7 @@ async function loadSchedule(soft) {
   scheduleItemsCache = data.items || [];
   goalsCache = data.goals || [];
   populateGoalSelect();
+  if (soft && openRemindId) return; // don't clobber an in-progress reminder edit
   renderSchedule();
 }
 
@@ -738,22 +740,28 @@ function renderSchedule() {
       const pop = document.getElementById('remind-' + el.dataset.id);
       const shown = pop.classList.contains('show');
       body.querySelectorAll('.remind-popover.show').forEach(p => p.classList.remove('show'));
-      if (!shown) pop.classList.add('show');
+      if (!shown) { pop.classList.add('show'); openRemindId = el.dataset.id; }
+      else { openRemindId = null; }
     });
   });
   body.querySelectorAll('[data-save]').forEach(el => {
     el.addEventListener('click', () => {
       const id = el.dataset.save;
       const pop = document.getElementById('remind-' + id);
+      openRemindId = null;
       saveRemind(id, pop.querySelector('.remind-input'));
-      pop.classList.remove('show');
     });
   });
   body.querySelectorAll('[data-cancel]').forEach(el => {
     el.addEventListener('click', () => {
       document.getElementById('remind-' + el.dataset.cancel).classList.remove('show');
+      openRemindId = null;
     });
   });
+  if (openRemindId) {
+    const pop = document.getElementById('remind-' + openRemindId);
+    if (pop) pop.classList.add('show');
+  }
 }
 
 document.querySelectorAll('.schedule-filter .seg-btn').forEach(btn => {
