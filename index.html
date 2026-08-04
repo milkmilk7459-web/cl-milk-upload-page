@@ -118,24 +118,24 @@
   .gate-err { color: var(--error-text); font-size: 12.5px; margin-top: 10px; display: none; }
 
   /* ---------- top-left toggles + quick nav ---------- */
-  .side-toggles {
-    position: fixed; top: 18px; left: 18px; z-index: 41;
-    display: flex; flex-direction: column; gap: 8px;
+  .side-toggles, .side-nav {
+    position: fixed; left: 18px; z-index: 41;
+    display: flex; flex-direction: column; gap: 6px;
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px;
+    padding: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   }
-  .side-nav {
-    position: fixed; top: 106px; left: 18px; z-index: 40;
-    display: flex; flex-direction: column; gap: 8px;
-    padding-top: 8px; border-top: 1px solid var(--border);
-  }
+  .side-toggles { top: 18px; }
+  .side-nav { top: 148px; z-index: 40; }
   .theme-btn, .side-nav a {
     width: 36px; height: 36px; padding: 0;
     display: flex; align-items: center; justify-content: center;
-    background: var(--card-bg); border: 1px solid var(--border); border-radius: 9px;
-    cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    background: transparent; border: none; border-radius: 10px;
+    cursor: pointer;
     font-size: 15px; color: var(--text-muted); text-decoration: none;
   }
-  .theme-btn.active { background: var(--badge-indigo-bg); color: var(--badge-indigo); border-color: var(--badge-indigo); }
-  .side-nav a:hover { background: var(--field-bg); color: var(--badge-indigo); border-color: var(--badge-indigo); }
+  .theme-btn.active { background: var(--badge-indigo-bg); color: var(--badge-indigo); }
+  .side-nav a:hover { background: var(--field-bg); color: var(--badge-indigo); }
   @media (max-width: 760px) {
     .side-toggles, .side-nav { display: none; }
   }
