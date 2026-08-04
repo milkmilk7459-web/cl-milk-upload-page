@@ -71,7 +71,7 @@
     min-height: 100vh;
     transition: background-color 0.2s ease, color 0.2s ease;
   }
-  .wrap { max-width: 1400px; margin: 0 auto; padding-left: 56px; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding-left: 76px; }
   @media (max-width: 760px) { .wrap { padding-left: 0; } }
   .card {
     background: var(--card-bg);
@@ -148,6 +148,10 @@
   .stat-empty { font-size: 12.5px; color: var(--text-muted); font-style: italic; }
   .stat-card.placeholder { opacity: 0.55; }
   .stat-card.placeholder .stat-num { font-size: 22px; font-weight: 800; color: var(--text-muted); background: none; -webkit-text-fill-color: initial; }
+  .stat-card.account-tab { cursor: pointer; transition: box-shadow 0.15s ease, opacity 0.15s ease; }
+  .stat-card.account-tab .stat-num { font-size: 17px; background: none; -webkit-text-fill-color: initial; color: var(--text); }
+  .stat-card.account-tab:not(.active) { opacity: 0.55; }
+  .stat-card.account-tab.active { box-shadow: 0 0 0 2px var(--badge-indigo) inset; }
   .dday-edit {
     position: absolute; top: 100%; left: 0; margin-top: 8px;
     width: 220px; padding: 14px; z-index: 20; text-align: left;
@@ -187,23 +191,40 @@
   .panel-body { overflow-y: auto; flex: 1; min-height: 0; }
   .empty-msg { color: var(--text-muted); font-size: 13px; padding: 20px 4px; text-align: center; }
   .schedule-filter { margin-bottom: 10px; flex-shrink: 0; }
-  .add-todo-row { display: flex; gap: 6px; margin-bottom: 12px; flex-shrink: 0; }
-  .add-todo-row input {
-    flex: 1; padding: 8px 12px; font-size: 13px; color: var(--text);
+  .add-todo-row { display: flex; gap: 6px; margin-bottom: 8px; flex-shrink: 0; align-items: center; }
+  .add-todo-row input[type="text"] {
+    flex: 1; min-width: 0; height: 36px; padding: 0 14px; font-size: 13px; color: var(--text);
     background: var(--field-bg); border: 1px solid var(--border); border-radius: 999px;
     outline: none; transition: border-color 0.15s ease;
   }
-  .add-todo-row input:focus { border-color: var(--badge-indigo); }
-  .add-todo-row button {
-    width: 34px; height: 34px; flex-shrink: 0; padding: 0;
+  .add-todo-row input[type="text"]:focus { border-color: var(--badge-indigo); }
+  .add-todo-row select.goal-select {
+    max-width: 96px; height: 36px; padding: 0 8px; font-size: 12px; color: var(--text);
+    background: var(--field-bg); border: 1px solid var(--border); border-radius: 999px;
+    outline: none; flex-shrink: 0;
+  }
+  .add-todo-row .memo-toggle-btn {
+    width: 36px; height: 36px; flex-shrink: 0; padding: 0;
+    background: var(--field-bg); color: var(--text-muted); border: 1px solid var(--border); border-radius: 50%;
+    font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .add-todo-row .memo-toggle-btn.active { background: var(--badge-indigo-bg); color: var(--badge-indigo); border-color: transparent; }
+  .add-todo-row button.add-btn {
+    width: 36px; height: 36px; flex-shrink: 0; padding: 0;
     background: var(--badge-dark); color: var(--card-bg); border: none; border-radius: 50%;
     font-size: 18px; font-weight: 700; line-height: 1; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
   }
-  .add-todo-row button:hover { opacity: 0.9; }
+  .add-todo-row button.add-btn:hover { opacity: 0.9; }
+  .add-todo-memo-row { margin: 0 0 12px; flex-shrink: 0; }
+  .add-todo-memo-row input {
+    width: 100%; padding: 8px 12px; font-size: 12.5px; color: var(--text);
+    background: var(--field-bg); border: 1px solid var(--border); border-radius: 10px; outline: none;
+  }
 
   /* schedule */
   .todo-item {
+    position: relative;
     display: flex; align-items: flex-start; gap: 10px;
     padding: 9px 4px; border-bottom: 1px solid var(--border);
   }
@@ -222,6 +243,34 @@
     display: inline-block; font-size: 10.5px; font-weight: 700; color: var(--error-text);
     background: var(--error-bg); padding: 1px 6px; border-radius: 6px; margin-left: 6px;
   }
+  .tag-goal {
+    display: inline-block; font-size: 10.5px; font-weight: 700; color: var(--badge-indigo);
+    background: var(--badge-indigo-bg); padding: 1px 6px; border-radius: 6px; margin-left: 6px;
+  }
+  .remind-btn {
+    background: none; border: none; cursor: pointer; font-size: 13px; opacity: 0.45;
+    flex-shrink: 0; padding: 2px 4px; margin-top: 1px; color: var(--text);
+  }
+  .remind-btn:hover, .remind-btn.active { opacity: 1; }
+  .remind-popover {
+    position: absolute; top: 100%; right: 0; margin-top: 4px; z-index: 15; width: 200px; padding: 12px;
+    display: none; text-align: left;
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  }
+  .remind-popover.show { display: block; }
+  .remind-popover label { display: block; font-size: 11px; color: var(--text-muted); margin: 0 0 4px; }
+  .remind-popover input[type="datetime-local"] {
+    width: 100%; padding: 7px 8px; font-size: 12.5px; color: var(--text);
+    background: var(--field-bg); border: 1px solid var(--border); border-radius: 8px; outline: none;
+  }
+  .remind-popover .row { display: flex; gap: 6px; margin-top: 8px; }
+  .remind-popover button {
+    flex: 1; padding: 6px; font-size: 12px; font-weight: 700; border: none; border-radius: 8px; cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+  }
+  .remind-popover .save-btn { background: var(--badge-dark); color: var(--card-bg); }
+  .remind-popover .cancel-btn { background: var(--field-bg); color: var(--text-muted); border: 1px solid var(--border); }
 
   /* materials as activity feed */
   .activity-item {
@@ -267,7 +316,7 @@
     display: block; font-size: 13px; font-weight: 600; color: var(--text-muted);
     margin-top: 18px; margin-bottom: 6px;
   }
-  .upload-grid .field:nth-child(-n+2) label { margin-top: 0; }
+  .upload-grid .field:nth-child(-n+2) > label:first-of-type { margin-top: 0; }
   .hint { font-weight: 400; color: var(--text-muted); font-size: 12px; }
   input[type="text"], input[type="password"], input:not([type]) {
     width: 100%; padding: 11px 12px; font-size: 15px; color: var(--text);
@@ -322,8 +371,9 @@
   <button class="theme-btn active" id="themeDarkBtn" aria-label="다크 모드">🌙</button>
 </div>
 <div class="side-nav">
-  <a href="#scheduleCard" title="일정">🗓️</a>
   <a href="#ddayBox" title="디데이">📅</a>
+  <a href="#scheduleCard" title="일정">📋</a>
+  <a href="#materialsCard" title="내 자료">📄</a>
   <a href="#uploadCard" title="업로드">⬆️</a>
 </div>
 
@@ -341,15 +391,15 @@
       <div class="stat-top"><span class="icon-badge orange sm">📅</span></div>
       <div class="stat-empty">불러오는 중...</div>
     </div>
-    <div class="card stat-card placeholder">
-      <div class="stat-top"><span class="icon-badge indigo sm">📁</span></div>
-      <div class="stat-num">—</div>
-      <div class="stat-label">준비 중</div>
+    <div class="card stat-card account-tab active" data-account="eunpyo" id="acctEunpyo">
+      <div class="stat-top"><span class="icon-badge indigo sm">👤</span></div>
+      <div class="stat-num">Eunpyo</div>
+      <div class="stat-label">선택됨</div>
     </div>
-    <div class="card stat-card placeholder">
-      <div class="stat-top"><span class="icon-badge dark sm">💬</span></div>
-      <div class="stat-num">—</div>
-      <div class="stat-label">준비 중</div>
+    <div class="card stat-card account-tab" data-account="minseong" id="acctMinseong">
+      <div class="stat-top"><span class="icon-badge dark sm">👤</span></div>
+      <div class="stat-num">Minseong</div>
+      <div class="stat-label">전환</div>
     </div>
     <div class="card stat-card placeholder">
       <div class="stat-top"><span class="icon-badge green sm">⏱️</span></div>
@@ -361,7 +411,7 @@
   <main class="dash-grid">
     <section class="card panel" id="scheduleCard">
       <div class="panel-header-row">
-        <h2><span class="icon-badge indigo">🗓️</span> 일정</h2>
+        <h2><span class="icon-badge indigo">📋</span> 일정</h2>
       </div>
       <div class="seg schedule-filter">
         <button type="button" class="seg-btn" data-filter="overdue">미룬 일</button>
@@ -370,7 +420,12 @@
       </div>
       <div class="add-todo-row">
         <input type="text" id="addTodoInput" placeholder="오늘 할 일 추가...">
-        <button type="button" id="addTodoBtn" aria-label="추가">+</button>
+        <select id="addTodoGoal" class="goal-select" style="display:none;"></select>
+        <button type="button" id="addTodoMemoBtn" class="memo-toggle-btn" title="메모 추가">📝</button>
+        <button type="button" id="addTodoBtn" class="add-btn" aria-label="추가">+</button>
+      </div>
+      <div class="add-todo-memo-row" id="addTodoMemoRow" style="display:none;">
+        <input type="text" id="addTodoMemoInput" placeholder="메모 (선택)">
       </div>
       <div class="panel-body" id="scheduleBody">
         <div class="empty-msg">일정을 불러오는 중...</div>
@@ -399,6 +454,11 @@
           <input name="subject" placeholder="예: 병리학, 약리학" required>
         </div>
         <div class="field">
+          <label>계정</label>
+          <div class="seg" id="uploadAccountSeg">
+            <button type="button" class="seg-btn active" data-upload-account="eunpyo">Eunpyo</button>
+            <button type="button" class="seg-btn" data-upload-account="minseong">Minseong</button>
+          </div>
           <label>주차</label>
           <input name="week" placeholder="예: 2주차, 3주차" required>
         </div>
@@ -461,7 +521,7 @@ applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
 document.getElementById('themeLightBtn').addEventListener('click', () => applyTheme('light'));
 document.getElementById('themeDarkBtn').addEventListener('click', () => applyTheme('dark'));
 
-/* ---------- side icons: align with 일정 card top, lagging scroll-follow (Apple-style) ---------- */
+/* ---------- side icons: align with 디데이 card top, lagging scroll-follow (Apple-style) ---------- */
 (function(){
   const toggles = document.querySelector('.side-toggles');
   const nav = document.querySelector('.side-nav');
@@ -474,7 +534,7 @@ document.getElementById('themeDarkBtn').addEventListener('click', () => applyThe
     const badge = scheduleCard.querySelector('.icon-badge');
     let docTop;
     if (badge) {
-      // align the sun icon's own vertical center with the schedule header icon's center
+      // align the sun icon's own vertical center with the d-day card icon's center
       const badgeRect = badge.getBoundingClientRect();
       const badgeCenterY = badgeRect.top + badgeRect.height / 2 + window.scrollY;
       const togglesPaddingTop = 6;
@@ -562,8 +622,32 @@ function renderDday(label, dateStr) {
   };
 }
 
+/* ---------- account switching ---------- */
+let currentAccount = 'eunpyo';
+
+function switchAccount(acc) {
+  if (acc === currentAccount) return;
+  currentAccount = acc;
+  document.querySelectorAll('.account-tab').forEach(card => {
+    const active = card.dataset.account === acc;
+    card.classList.toggle('active', active);
+    card.querySelector('.stat-label').textContent = active ? '선택됨' : '전환';
+  });
+  scheduleFilter = 'today';
+  document.querySelectorAll('.schedule-filter .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === 'today'));
+  document.getElementById('scheduleBody').innerHTML = '<div class="empty-msg">일정을 불러오는 중...</div>';
+  document.getElementById('materialsBody').innerHTML = '<div class="empty-msg">자료 목록을 불러오는 중...</div>';
+  loadSchedule(false);
+  loadMaterials();
+  rpc('fire_todo_sync', { p_passcode: getPasscode(), p_account: currentAccount }).catch(() => {});
+}
+document.querySelectorAll('.account-tab').forEach(card => {
+  card.addEventListener('click', () => switchAccount(card.dataset.account));
+});
+
 /* ---------- schedule ---------- */
 let scheduleItemsCache = [];
+let goalsCache = [];
 let scheduleFilter = 'today';
 
 function todayStr() {
@@ -576,13 +660,25 @@ function tomorrowStr() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function populateGoalSelect() {
+  const sel = document.getElementById('addTodoGoal');
+  if (!goalsCache.length) { sel.style.display = 'none'; sel.innerHTML = ''; return; }
+  sel.innerHTML = '<option value="">목표 없음</option>' +
+    goalsCache.map(g => `<option value="${escapeAttr(g.title)}">${escapeHtml(g.title)}</option>`).join('');
+  sel.style.display = '';
+}
+
 async function loadSchedule(soft) {
-  const data = await rpc('get_todo_snapshot', { p_passcode: getPasscode() }).catch(() => null);
+  const acc = currentAccount;
+  const data = await rpc('get_todo_snapshot', { p_passcode: getPasscode(), p_account: acc }).catch(() => null);
+  if (acc !== currentAccount) return;
   if (!data || !data.ok) {
     if (!soft) document.getElementById('scheduleBody').innerHTML = '<div class="empty-msg">일정을 불러오지 못했어요</div>';
     return;
   }
   scheduleItemsCache = data.items || [];
+  goalsCache = data.goals || [];
+  populateGoalSelect();
   renderSchedule();
 }
 
@@ -591,6 +687,19 @@ const SCHEDULE_EMPTY_MSG = {
   today: '오늘 할 일이 없어요 🎉',
   tomorrow: '내일 예정된 일이 없어요'
 };
+
+function toLocalInputValue(iso) {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function formatRemind(iso) {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 function renderSchedule() {
   const body = document.getElementById('scheduleBody');
@@ -606,14 +715,44 @@ function renderSchedule() {
   body.innerHTML = items.map(it => `
     <div class="todo-item ${it.done ? 'done' : ''}" data-id="${escapeAttr(it.id)}">
       <div class="todo-check ${it.done ? 'done' : ''}" data-id="${escapeAttr(it.id)}">${it.done ? '✓' : ''}</div>
-      <div style="flex:1;">
-        <div class="todo-text">${escapeHtml(it.title)}${it.overdue && !it.done ? '<span class="tag-overdue">지연</span>' : ''}</div>
-        <div class="todo-date">${escapeHtml(it.date || '')}</div>
+      <div style="flex:1; min-width:0;">
+        <div class="todo-text">${escapeHtml(it.title)}${it.goal ? `<span class="tag-goal">${escapeHtml(it.goal)}</span>` : ''}${it.overdue && !it.done ? '<span class="tag-overdue">지연</span>' : ''}</div>
+        <div class="todo-date">${escapeHtml(it.date || '')}${it.remindAt ? ` · ⏰ ${formatRemind(it.remindAt)}` : ''}</div>
+      </div>
+      <button type="button" class="remind-btn" data-id="${escapeAttr(it.id)}" title="리마인드 설정">⏰</button>
+      <div class="remind-popover" id="remind-${escapeAttr(it.id)}">
+        <label>리마인드 시각</label>
+        <input type="datetime-local" class="remind-input" value="${it.remindAt ? toLocalInputValue(it.remindAt) : ''}">
+        <div class="row">
+          <button type="button" class="cancel-btn" data-cancel="${escapeAttr(it.id)}">취소</button>
+          <button type="button" class="save-btn" data-save="${escapeAttr(it.id)}">저장</button>
+        </div>
       </div>
     </div>
   `).join('');
   body.querySelectorAll('.todo-check').forEach(el => {
     el.addEventListener('click', () => toggleTodo(el.dataset.id));
+  });
+  body.querySelectorAll('.remind-btn').forEach(el => {
+    el.addEventListener('click', () => {
+      const pop = document.getElementById('remind-' + el.dataset.id);
+      const shown = pop.classList.contains('show');
+      body.querySelectorAll('.remind-popover.show').forEach(p => p.classList.remove('show'));
+      if (!shown) pop.classList.add('show');
+    });
+  });
+  body.querySelectorAll('[data-save]').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.dataset.save;
+      const pop = document.getElementById('remind-' + id);
+      saveRemind(id, pop.querySelector('.remind-input'));
+      pop.classList.remove('show');
+    });
+  });
+  body.querySelectorAll('[data-cancel]').forEach(el => {
+    el.addEventListener('click', () => {
+      document.getElementById('remind-' + el.dataset.cancel).classList.remove('show');
+    });
   });
 }
 
@@ -634,24 +773,54 @@ async function toggleTodo(id) {
   row.classList.toggle('done', newDone);
   const cached = scheduleItemsCache.find(it => String(it.id) === String(id));
   if (cached) cached.done = newDone;
-  await rpc('toggle_todo_item_local', { p_todo_id: id, p_done: newDone, p_passcode: getPasscode() }).catch(() => {});
-  rpc('fire_todo_toggle', { p_todo_id: id, p_done: newDone, p_passcode: getPasscode() }).catch(() => {});
+  const acc = currentAccount;
+  await rpc('toggle_todo_item_local', { p_todo_id: id, p_done: newDone, p_passcode: getPasscode(), p_account: acc }).catch(() => {});
+  rpc('fire_todo_toggle', { p_todo_id: id, p_done: newDone, p_passcode: getPasscode(), p_account: acc }).catch(() => {});
+}
+
+async function saveRemind(id, inputEl) {
+  const val = inputEl.value;
+  if (!val) return;
+  const [datePart, timePart] = val.split('T');
+  const [y, mo, da] = datePart.split('-').map(Number);
+  const [h, mi] = timePart.split(':').map(Number);
+  const isoLocal = new Date(y, mo - 1, da, h, mi).toISOString();
+  const cached = scheduleItemsCache.find(it => String(it.id) === String(id));
+  if (cached) cached.remindAt = isoLocal;
+  renderSchedule();
+  const acc = currentAccount;
+  await rpc('set_todo_item_remind_local', { p_todo_id: id, p_remind_at: isoLocal, p_passcode: getPasscode(), p_account: acc }).catch(() => {});
+  rpc('fire_todo_remind', { p_todo_id: id, p_year: y, p_month: mo, p_day: da, p_hour: h, p_minute: mi, p_passcode: getPasscode(), p_account: acc }).catch(() => {});
 }
 
 const addTodoInput = document.getElementById('addTodoInput');
 const addTodoBtn = document.getElementById('addTodoBtn');
+const addTodoGoalSel = document.getElementById('addTodoGoal');
+const addTodoMemoBtn = document.getElementById('addTodoMemoBtn');
+const addTodoMemoRow = document.getElementById('addTodoMemoRow');
+const addTodoMemoInput = document.getElementById('addTodoMemoInput');
+
+addTodoMemoBtn.addEventListener('click', () => {
+  const show = addTodoMemoRow.style.display === 'none';
+  addTodoMemoRow.style.display = show ? '' : 'none';
+  addTodoMemoBtn.classList.toggle('active', show);
+});
 
 async function addTodoItem() {
   const title = addTodoInput.value.trim();
   if (!title) return;
+  const goal = addTodoGoalSel.value || null;
+  const content = addTodoMemoInput.value.trim() || null;
   addTodoInput.value = '';
+  addTodoMemoInput.value = '';
   const dateStr = todayStr();
-  const res = await rpc('add_todo_item_local', { p_title: title, p_date: dateStr, p_passcode: getPasscode() }).catch(() => null);
-  if (res && res.ok) {
-    scheduleItemsCache.push({ id: res.id, title, date: dateStr, done: false, overdue: false });
+  const acc = currentAccount;
+  const res = await rpc('add_todo_item_local', { p_title: title, p_date: dateStr, p_passcode: getPasscode(), p_account: acc, p_goal: goal, p_content: content }).catch(() => null);
+  if (res && res.ok && acc === currentAccount) {
+    scheduleItemsCache.push({ id: res.id, title, date: dateStr, done: false, overdue: false, goal, content, remindAt: null });
     renderSchedule();
   }
-  rpc('fire_todo_add', { p_title: title, p_date: dateStr, p_passcode: getPasscode() }).catch(() => {});
+  rpc('fire_todo_add', { p_title: title, p_date: dateStr, p_passcode: getPasscode(), p_account: acc, p_goal: goal, p_content: content }).catch(() => {});
 }
 addTodoBtn.addEventListener('click', addTodoItem);
 addTodoInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addTodoItem(); });
@@ -664,8 +833,9 @@ const STAGE_LABEL = {
 const STAGE_PROGRESS = { queued: 10, downloading: 30, generating: 60, uploading: 85, done: 100, failed: 100 };
 
 async function loadMaterials() {
-  const data = await rpc('list_materials', { p_passcode: getPasscode() }).catch(() => null);
-  if (!Array.isArray(data)) return;
+  const acc = currentAccount;
+  const data = await rpc('list_materials', { p_passcode: getPasscode(), p_account: acc }).catch(() => null);
+  if (!Array.isArray(data) || acc !== currentAccount) return;
   renderMaterials(data);
 }
 
@@ -741,7 +911,7 @@ function initDashboard() {
   loadSchedule(false);
   loadMaterials();
 
-  rpc('fire_todo_sync', { p_passcode: getPasscode() }).catch(() => {});
+  rpc('fire_todo_sync', { p_passcode: getPasscode(), p_account: currentAccount }).catch(() => {});
 
   if (materialsPollTimer) clearInterval(materialsPollTimer);
   materialsPollTimer = setInterval(loadMaterials, 15000);
@@ -795,6 +965,14 @@ document.querySelectorAll('.seg-btn[data-txt-mode]').forEach((btn) => {
   });
 });
 
+let uploadAccount = 'eunpyo';
+document.querySelectorAll('.seg-btn[data-upload-account]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    uploadAccount = btn.dataset.uploadAccount;
+    document.querySelectorAll('.seg-btn[data-upload-account]').forEach((b) => b.classList.toggle('active', b === btn));
+  });
+});
+
 document.getElementById('f').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('submitBtn');
@@ -830,7 +1008,8 @@ document.getElementById('f').addEventListener('submit', async (e) => {
       p_txt_name: txtName,
       p_txt_url: txtUrl,
       p_pdf_name: pdfFile.name,
-      p_pdf_url: pdfUrl
+      p_pdf_url: pdfUrl,
+      p_account: uploadAccount
     };
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/fire_lecture_upload`, {
       method: 'POST',
@@ -845,7 +1024,9 @@ document.getElementById('f').addEventListener('submit', async (e) => {
     if (res.ok && data.ok) {
       setStatus('success', '요청 완료! 처리가 끝나면 카카오톡으로 알려드릴게요.\n(' + (data.stage || '') + ')');
       form.reset();
-      loadMaterials();
+      document.querySelectorAll('.seg-btn[data-upload-account]').forEach((b) => b.classList.toggle('active', b.dataset.uploadAccount === 'eunpyo'));
+      uploadAccount = 'eunpyo';
+      if (currentAccount === uploadAccount) loadMaterials();
     } else {
       setStatus('error', '오류 (' + (data.stage || res.status) + '): ' + (data.error || data.detail || res.status));
     }
