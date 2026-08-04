@@ -523,8 +523,12 @@ document.getElementById('themeDarkBtn').addEventListener('click', () => applyThe
     if (nav) nav.style.top = (docTop + toggles.offsetHeight + 30) + 'px';
   }
   alignSideIcons();
-  setTimeout(alignSideIcons, 700);
+  [200, 500, 900, 1500, 2500, 4000].forEach(ms => setTimeout(alignSideIcons, ms));
   window.addEventListener('resize', alignSideIcons);
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(() => alignSideIcons());
+    ro.observe(document.body);
+  }
 
   let current = 0;
   function tick() {
