@@ -507,7 +507,18 @@ document.getElementById('themeDarkBtn').addEventListener('click', () => applyThe
 
   function alignSideIcons() {
     if (!scheduleCard || !toggles) return;
-    const docTop = scheduleCard.getBoundingClientRect().top + window.scrollY;
+    const badge = scheduleCard.querySelector('.icon-badge');
+    let docTop;
+    if (badge) {
+      // align the sun icon's own vertical center with the schedule header icon's center
+      const badgeRect = badge.getBoundingClientRect();
+      const badgeCenterY = badgeRect.top + badgeRect.height / 2 + window.scrollY;
+      const togglesPaddingTop = 6;
+      const firstBtnHalfHeight = 18;
+      docTop = badgeCenterY - togglesPaddingTop - firstBtnHalfHeight;
+    } else {
+      docTop = scheduleCard.getBoundingClientRect().top + window.scrollY;
+    }
     toggles.style.top = docTop + 'px';
     if (nav) nav.style.top = (docTop + toggles.offsetHeight + 30) + 'px';
   }
