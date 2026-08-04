@@ -90,32 +90,6 @@
   .icon-badge.red { background: var(--error-bg); color: var(--error-text); }
   .icon-badge.sm { width: 32px; height: 32px; font-size: 15px; }
 
-  /* ---------- passcode gate ---------- */
-  #gate {
-    position: fixed; inset: 0; z-index: 50;
-    background: var(--bg);
-    display: flex; align-items: center; justify-content: center;
-  }
-  #gate.hidden { display: none; }
-  .gate-card { width: 100%; max-width: 340px; padding: 28px 24px; text-align: center; }
-  .gate-card .icon {
-    font-size: 28px; width: 56px; height: 56px; border-radius: 50%; margin: 0 auto;
-    display: flex; align-items: center; justify-content: center;
-    background: linear-gradient(135deg, var(--badge-indigo-bg), var(--badge-orange-bg));
-  }
-  .gate-card h2 { font-size: 17px; margin: 10px 0 16px; }
-  .gate-card input {
-    width: 100%; padding: 11px 12px; font-size: 15px;
-    background: var(--field-bg); border: 1px solid var(--border);
-    border-radius: 10px; outline: none; color: var(--text); text-align: center;
-    letter-spacing: 2px;
-  }
-  .gate-card input:focus { border-color: var(--accent-light); }
-  .gate-card button {
-    width: 100%; margin-top: 12px; padding: 12px; font-size: 14px; font-weight: 700;
-    background: var(--badge-dark); color: var(--card-bg); border: none; border-radius: 14px; cursor: pointer;
-  }
-  .gate-err { color: var(--error-text); font-size: 12.5px; margin-top: 10px; display: none; }
 
   /* ---------- top-left toggles + quick nav ---------- */
   .side-toggles, .side-nav {
@@ -208,12 +182,12 @@
     .dash-grid { grid-template-columns: 1fr; }
   }
   .panel { padding: 20px 20px 18px; max-height: 480px; min-height: 360px; display: flex; flex-direction: column; }
-  .panel-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .panel-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-shrink: 0; }
   .panel h2 { font-size: 15px; margin: 0; color: var(--text); font-weight: 700; display: flex; align-items: center; gap: 12px; }
-  .panel-body { overflow-y: auto; flex: 1; }
+  .panel-body { overflow-y: auto; flex: 1; min-height: 0; }
   .empty-msg { color: var(--text-muted); font-size: 13px; padding: 20px 4px; text-align: center; }
-  .schedule-filter { margin-bottom: 10px; }
-  .add-todo-row { display: flex; gap: 6px; margin-bottom: 12px; }
+  .schedule-filter { margin-bottom: 10px; flex-shrink: 0; }
+  .add-todo-row { display: flex; gap: 6px; margin-bottom: 12px; flex-shrink: 0; }
   .add-todo-row input {
     flex: 1; padding: 8px 12px; font-size: 13px; color: var(--text);
     background: var(--field-bg); border: 1px solid var(--border); border-radius: 999px;
@@ -343,23 +317,13 @@
 </head>
 <body>
 
-<div id="gate">
-  <div class="card gate-card">
-    <div class="icon">🔒</div>
-    <h2>접근 코드를 입력하세요</h2>
-    <input id="gateInput" type="password" autocomplete="current-password" placeholder="passcode" inputmode="numeric">
-    <button id="gateBtn">확인</button>
-    <p class="gate-err" id="gateErr">코드가 올바르지 않아요. 다시 시도해주세요.</p>
-  </div>
-</div>
-
 <div class="side-toggles">
   <button class="theme-btn" id="themeLightBtn" aria-label="라이트 모드">☀️</button>
   <button class="theme-btn active" id="themeDarkBtn" aria-label="다크 모드">🌙</button>
 </div>
 <div class="side-nav">
   <a href="#scheduleCard" title="일정">🗓️</a>
-  <a href="#materialsCard" title="최신 자료">📄</a>
+  <a href="#ddayBox" title="디데이">📅</a>
   <a href="#uploadCard" title="업로드">⬆️</a>
 </div>
 
@@ -469,8 +433,8 @@
 const SUPABASE_URL = 'https://osvnjxfiuahtfexhensz.supabase.co';
 const PUBLISHABLE_KEY = 'sb_publishable_zQmnrQjdZtkx-KNkGuX9fg_sivRsRLs';
 const UPLOAD_BUCKET = 'lecture-uploads';
-const PASSCODE_KEY = 'cl_milk_passcode';
 const THEME_KEY = 'cl_milk_theme';
+const SHARE_PASSCODE = '102425';
 
 function rpc(name, body) {
   return fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
@@ -484,7 +448,7 @@ function rpc(name, body) {
   }).then(r => r.json());
 }
 
-function getPasscode() { return localStorage.getItem(PASSCODE_KEY) || ''; }
+function getPasscode() { return SHARE_PASSCODE; }
 
 /* ---------- theme (default: dark) ---------- */
 function applyTheme(theme) {
@@ -523,11 +487,9 @@ document.getElementById('themeDarkBtn').addEventListener('click', () => applyThe
     if (nav) nav.style.top = (docTop + toggles.offsetHeight + 30) + 'px';
   }
   alignSideIcons();
-  [200, 500, 900, 1500, 2500, 4000].forEach(ms => setTimeout(alignSideIcons, ms));
   window.addEventListener('resize', alignSideIcons);
   if (window.ResizeObserver) {
-    const ro = new ResizeObserver(() => alignSideIcons());
-    ro.observe(document.body);
+    new ResizeObserver(alignSideIcons).observe(document.body);
   }
 
   let current = 0;
@@ -541,46 +503,7 @@ document.getElementById('themeDarkBtn').addEventListener('click', () => applyThe
   requestAnimationFrame(tick);
 })();
 
-/* ---------- passcode gate ---------- */
-const gateEl = document.getElementById('gate');
-const gateInput = document.getElementById('gateInput');
-const gateBtn = document.getElementById('gateBtn');
-const gateErr = document.getElementById('gateErr');
-
-async function tryUnlock(code) {
-  const res = await rpc('list_materials', { p_passcode: code });
-  return Array.isArray(res);
-}
-
-async function attemptGate() {
-  const code = gateInput.value.trim();
-  if (!code) return;
-  gateBtn.disabled = true;
-  gateBtn.textContent = '확인 중...';
-  const ok = await tryUnlock(code).catch(() => false);
-  gateBtn.disabled = false;
-  gateBtn.textContent = '확인';
-  if (ok) {
-    localStorage.setItem(PASSCODE_KEY, code);
-    gateEl.classList.add('hidden');
-    initDashboard();
-  } else {
-    gateErr.style.display = 'block';
-  }
-}
-gateBtn.addEventListener('click', attemptGate);
-gateInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') attemptGate(); });
-
-(async function boot() {
-  const saved = getPasscode();
-  if (saved && await tryUnlock(saved).catch(() => false)) {
-    gateEl.classList.add('hidden');
-    initDashboard();
-  } else {
-    gateEl.classList.remove('hidden');
-    gateInput.focus();
-  }
-})();
+initDashboard();
 
 /* ---------- quote + d-day ---------- */
 async function loadDashboardMeta() {
