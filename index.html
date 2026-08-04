@@ -373,6 +373,8 @@
 
   /* ---------- calendar ---------- */
   .calendar-card { padding: 20px 20px 18px; margin-top: 16px; }
+  .calendar-layout { display: flex; gap: 20px; align-items: flex-start; }
+  .calendar-main { flex: 1; min-width: 0; }
   .calendar-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
   .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
   .calendar-day {
@@ -389,8 +391,28 @@
   .calendar-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--badge-indigo); flex-shrink: 0; }
   .calendar-dot.done { background: var(--text-muted); opacity: 0.5; }
   .calendar-day-more { font-size: 9px; color: var(--text-muted); }
-  .calendar-day-detail { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); display: none; }
-  .calendar-day-detail-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+  .calendar-detail-panel {
+    width: 0; overflow: hidden; flex-shrink: 0; opacity: 0; position: relative;
+    transition: width 0.2s ease, opacity 0.2s ease;
+  }
+  .calendar-detail-panel.show { width: 260px; opacity: 1; padding-left: 4px; }
+  .calendar-detail-close {
+    position: absolute; top: 0; right: 0; background: none; border: none; cursor: pointer;
+    font-size: 18px; color: var(--text-muted); line-height: 1; padding: 2px 4px;
+  }
+  .calendar-day-detail-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; color: var(--text); padding-right: 20px; white-space: nowrap; }
+  .calendar-day-detail-list { max-height: 240px; overflow-y: auto; margin-bottom: 10px; }
+  .calendar-detail-add { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+  .calendar-detail-add input[type="text"] {
+    flex: 1; min-width: 90px; height: 34px; padding: 0 12px; font-size: 12.5px; color: var(--text);
+    background: var(--field-bg); border: 1px solid var(--border); border-radius: 999px; outline: none;
+  }
+  .calendar-detail-add select.goal-select { height: 34px; max-width: 90px; }
+  .calendar-detail-add .add-btn { width: 34px; height: 34px; font-size: 16px; }
+  @media (max-width: 760px) {
+    .calendar-layout { flex-direction: column; }
+    .calendar-detail-panel.show { width: 100%; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); padding-left: 0; }
+  }
 </style>
 </head>
 <body>
@@ -531,11 +553,15 @@
     <div class="panel-header-row">
       <h2><span class="icon-badge indigo">📆</span> 캘린더</h2>
     </div>
-    <div class="calendar-weekdays">
-      <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+    <div class="calendar-layout">
+      <div class="calendar-main">
+        <div class="calendar-weekdays">
+          <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </div>
+      <div class="calendar-detail-panel" id="calendarDayDetail"></div>
     </div>
-    <div class="calendar-grid" id="calendarGrid"></div>
-    <div class="calendar-day-detail" id="calendarDayDetail"></div>
   </section>
 </div>
 
@@ -717,11 +743,15 @@ function tomorrowStr() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function goalOptionsHtml() {
+  return '<option value="">목표 없음</option>' +
+    goalsCache.map(g => `<option value="${escapeAttr(g.title)}">${escapeHtml(g.title)}</option>`).join('');
+}
+
 function populateGoalSelect() {
   const sel = document.getElementById('addTodoGoal');
   if (!goalsCache.length) { sel.style.display = 'none'; sel.innerHTML = ''; return; }
-  sel.innerHTML = '<option value="">목표 없음</option>' +
-    goalsCache.map(g => `<option value="${escapeAttr(g.title)}">${escapeHtml(g.title)}</option>`).join('');
+  sel.innerHTML = goalOptionsHtml();
   sel.style.display = '';
 }
 
@@ -819,28 +849,57 @@ function renderCalendar() {
   renderCalendarDayDetail();
 }
 
+const WEEKDAY_KR = ['일', '월', '화', '수', '목', '금', '토'];
+
 function renderCalendarDayDetail() {
-  const box = document.getElementById('calendarDayDetail');
-  if (!box) return;
-  if (!selectedCalendarDate) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  const panel = document.getElementById('calendarDayDetail');
+  if (!panel) return;
+  if (!selectedCalendarDate) { panel.classList.remove('show'); panel.innerHTML = ''; return; }
+  panel.classList.add('show');
+
   const dayItems = calendarCache.filter(it => it.date === selectedCalendarDate);
-  box.style.display = 'block';
-  const title = `<div class="calendar-day-detail-title">${escapeHtml(selectedCalendarDate)}</div>`;
-  if (!dayItems.length) {
-    box.innerHTML = title + '<div class="empty-msg">이 날 일정이 없어요</div>';
-    return;
-  }
-  box.innerHTML = title + dayItems.map(it => `
+  const d = new Date(selectedCalendarDate + 'T00:00:00');
+  const titleText = `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAY_KR[d.getDay()]})`;
+  const listHtml = dayItems.length ? dayItems.map(it => `
     <div class="todo-item ${it.done ? 'done' : ''}" data-id="${escapeAttr(it.id)}">
       <div class="todo-check ${it.done ? 'done' : ''}" data-id="${escapeAttr(it.id)}">${it.done ? '✓' : ''}</div>
-      <div style="flex:1;">
+      <div style="flex:1; min-width:0;">
         <div class="todo-text">${escapeHtml(it.title)}${it.goal ? `<span class="tag-goal">${escapeHtml(it.goal)}</span>` : ''}</div>
       </div>
     </div>
-  `).join('');
-  box.querySelectorAll('.todo-check').forEach(el => {
+  `).join('') : '<div class="empty-msg">이 날 일정이 없어요</div>';
+
+  panel.innerHTML = `
+    <button type="button" class="calendar-detail-close" id="calendarDetailClose" aria-label="닫기">×</button>
+    <div class="calendar-day-detail-title">${escapeHtml(titleText)}</div>
+    <div class="calendar-day-detail-list">${listHtml}</div>
+    <div class="calendar-detail-add">
+      <input type="text" id="calendarAddInput" placeholder="이 날에 할 일 추가...">
+      <select id="calendarAddGoal" class="goal-select">${goalOptionsHtml()}</select>
+      <button type="button" id="calendarAddBtn" class="add-btn" aria-label="추가">+</button>
+    </div>
+  `;
+  panel.querySelectorAll('.todo-check').forEach(el => {
     el.addEventListener('click', () => toggleTodo(el.dataset.id));
   });
+  document.getElementById('calendarDetailClose').addEventListener('click', () => {
+    selectedCalendarDate = null;
+    renderCalendar();
+  });
+  document.getElementById('calendarAddBtn').addEventListener('click', calendarAddItem);
+  document.getElementById('calendarAddInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') calendarAddItem(); });
+}
+
+async function calendarAddItem() {
+  if (!selectedCalendarDate) return;
+  const input = document.getElementById('calendarAddInput');
+  const goalSel = document.getElementById('calendarAddGoal');
+  const title = input.value.trim();
+  if (!title) return;
+  const goal = goalSel.value || null;
+  const dateStr = selectedCalendarDate;
+  input.value = '';
+  await addTodoItemCore(title, dateStr, goal, null);
 }
 
 const SCHEDULE_EMPTY_MSG = {
@@ -979,14 +1038,7 @@ addTodoMemoBtn.addEventListener('click', () => {
   addTodoMemoBtn.classList.toggle('active', show);
 });
 
-async function addTodoItem() {
-  const title = addTodoInput.value.trim();
-  if (!title) return;
-  const goal = addTodoGoalSel.value || null;
-  const content = addTodoMemoInput.value.trim() || null;
-  addTodoInput.value = '';
-  addTodoMemoInput.value = '';
-  const dateStr = todayStr();
+async function addTodoItemCore(title, dateStr, goal, content) {
   const acc = currentAccount;
   const res = await rpc('add_todo_item_local', { p_title: title, p_date: dateStr, p_passcode: getPasscode(), p_account: acc, p_goal: goal, p_content: content }).catch(() => null);
   if (res && res.ok && acc === currentAccount) {
@@ -998,6 +1050,17 @@ async function addTodoItem() {
     renderSchedule();
   }
   rpc('fire_todo_add', { p_title: title, p_date: dateStr, p_passcode: getPasscode(), p_account: acc, p_goal: goal, p_content: content }).catch(() => {});
+  return res;
+}
+
+async function addTodoItem() {
+  const title = addTodoInput.value.trim();
+  if (!title) return;
+  const goal = addTodoGoalSel.value || null;
+  const content = addTodoMemoInput.value.trim() || null;
+  addTodoInput.value = '';
+  addTodoMemoInput.value = '';
+  await addTodoItemCore(title, todayStr(), goal, content);
 }
 addTodoBtn.addEventListener('click', addTodoItem);
 addTodoInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addTodoItem(); });
