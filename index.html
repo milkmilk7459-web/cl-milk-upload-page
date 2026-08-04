@@ -152,6 +152,14 @@
   .stat-card.account-tab .stat-num { font-size: 17px; background: none; -webkit-text-fill-color: initial; color: var(--text); }
   .stat-card.account-tab:not(.active) { opacity: 0.55; }
   .stat-card.account-tab.active { box-shadow: 0 0 0 2px var(--badge-indigo) inset; }
+  .progress-ring-wrap { position: relative; width: 40px; height: 40px; }
+  .progress-ring-wrap svg { display: block; transform: rotate(-90deg); }
+  .progress-ring-bg { fill: none; stroke: var(--field-bg); stroke-width: 6; }
+  .progress-ring-fg {
+    fill: none; stroke: var(--badge-green); stroke-width: 6; stroke-linecap: round;
+    transition: stroke-dashoffset 0.5s ease;
+  }
+  .progress-ring-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 800; color: var(--text); }
   .dday-edit {
     position: absolute; top: 100%; left: 0; margin-top: 8px;
     width: 220px; padding: 14px; z-index: 20; text-align: left;
@@ -391,10 +399,18 @@
       <div class="stat-top"><span class="icon-badge orange sm">📅</span></div>
       <div class="stat-empty">불러오는 중...</div>
     </div>
-    <div class="card stat-card placeholder">
-      <div class="stat-top"><span class="icon-badge green sm">⏱️</span></div>
-      <div class="stat-num">—</div>
-      <div class="stat-label">준비 중</div>
+    <div class="card stat-card" id="progressBox">
+      <div class="stat-top">
+        <div class="progress-ring-wrap">
+          <svg viewBox="0 0 64 64" width="40" height="40">
+            <circle class="progress-ring-bg" cx="32" cy="32" r="26"></circle>
+            <circle class="progress-ring-fg" id="progressRingFg" cx="32" cy="32" r="26"></circle>
+          </svg>
+          <div class="progress-ring-pct" id="progressRingPct">-</div>
+        </div>
+      </div>
+      <div class="stat-label">학습 진행률</div>
+      <div class="stat-empty" id="progressSubtext" style="font-style:normal;">불러오는 중...</div>
     </div>
     <div class="card stat-card account-tab active" data-account="eunpyo" id="acctEunpyo">
       <div class="stat-top"><span class="icon-badge indigo sm">👤</span></div>
@@ -685,8 +701,31 @@ async function loadSchedule(soft) {
   scheduleItemsCache = data.items || [];
   goalsCache = data.goals || [];
   populateGoalSelect();
+  renderProgress();
   if (soft && openRemindId) return; // don't clobber an in-progress reminder edit
   renderSchedule();
+}
+
+const PROGRESS_RING_CIRC = 2 * Math.PI * 26;
+
+function renderProgress() {
+  const fg = document.getElementById('progressRingFg');
+  const pctEl = document.getElementById('progressRingPct');
+  const subEl = document.getElementById('progressSubtext');
+  if (!fg) return;
+  const total = scheduleItemsCache.length;
+  const done = scheduleItemsCache.filter(it => it.done).length;
+  fg.style.strokeDasharray = PROGRESS_RING_CIRC;
+  if (!total) {
+    fg.style.strokeDashoffset = PROGRESS_RING_CIRC;
+    pctEl.textContent = '-';
+    subEl.textContent = '일정이 없어요';
+    return;
+  }
+  const pct = Math.round((done / total) * 100);
+  fg.style.strokeDashoffset = PROGRESS_RING_CIRC * (1 - pct / 100);
+  pctEl.textContent = pct + '%';
+  subEl.textContent = `${done}/${total} 완료`;
 }
 
 const SCHEDULE_EMPTY_MSG = {
@@ -786,6 +825,7 @@ async function toggleTodo(id) {
   row.classList.toggle('done', newDone);
   const cached = scheduleItemsCache.find(it => String(it.id) === String(id));
   if (cached) cached.done = newDone;
+  renderProgress();
   const acc = currentAccount;
   await rpc('toggle_todo_item_local', { p_todo_id: id, p_done: newDone, p_passcode: getPasscode(), p_account: acc }).catch(() => {});
   rpc('fire_todo_toggle', { p_todo_id: id, p_done: newDone, p_passcode: getPasscode(), p_account: acc }).catch(() => {});
@@ -831,6 +871,7 @@ async function addTodoItem() {
   const res = await rpc('add_todo_item_local', { p_title: title, p_date: dateStr, p_passcode: getPasscode(), p_account: acc, p_goal: goal, p_content: content }).catch(() => null);
   if (res && res.ok && acc === currentAccount) {
     scheduleItemsCache.push({ id: res.id, title, date: dateStr, done: false, overdue: false, goal, content, remindAt: null });
+    renderProgress();
     renderSchedule();
   }
   rpc('fire_todo_add', { p_title: title, p_date: dateStr, p_passcode: getPasscode(), p_account: acc, p_goal: goal, p_content: content }).catch(() => {});
