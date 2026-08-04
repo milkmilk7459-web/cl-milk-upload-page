@@ -316,7 +316,7 @@
     display: block; font-size: 13px; font-weight: 600; color: var(--text-muted);
     margin-top: 18px; margin-bottom: 6px;
   }
-  .upload-grid .field:nth-child(-n+2) > label:first-of-type { margin-top: 0; }
+  .upload-grid .field:nth-child(-n+3) > label:first-of-type { margin-top: 0; }
   .hint { font-weight: 400; color: var(--text-muted); font-size: 12px; }
   input[type="text"], input[type="password"], input:not([type]) {
     width: 100%; padding: 11px 12px; font-size: 15px; color: var(--text);
@@ -391,6 +391,11 @@
       <div class="stat-top"><span class="icon-badge orange sm">📅</span></div>
       <div class="stat-empty">불러오는 중...</div>
     </div>
+    <div class="card stat-card placeholder">
+      <div class="stat-top"><span class="icon-badge green sm">⏱️</span></div>
+      <div class="stat-num">—</div>
+      <div class="stat-label">준비 중</div>
+    </div>
     <div class="card stat-card account-tab active" data-account="eunpyo" id="acctEunpyo">
       <div class="stat-top"><span class="icon-badge indigo sm">👤</span></div>
       <div class="stat-num">Eunpyo</div>
@@ -400,11 +405,6 @@
       <div class="stat-top"><span class="icon-badge dark sm">👤</span></div>
       <div class="stat-num">Minseong</div>
       <div class="stat-label">전환</div>
-    </div>
-    <div class="card stat-card placeholder">
-      <div class="stat-top"><span class="icon-badge green sm">⏱️</span></div>
-      <div class="stat-num">—</div>
-      <div class="stat-label">준비 중</div>
     </div>
   </div>
 
@@ -449,16 +449,18 @@
     </div>
     <form id="f">
       <div class="upload-grid">
+        <div class="field full" style="margin-bottom:4px;">
+          <label>계정</label>
+          <div class="seg" id="uploadAccountSeg" style="max-width:220px;">
+            <button type="button" class="seg-btn active" data-upload-account="eunpyo">Eunpyo</button>
+            <button type="button" class="seg-btn" data-upload-account="minseong">Minseong</button>
+          </div>
+        </div>
         <div class="field">
           <label>과목명</label>
           <input name="subject" placeholder="예: 병리학, 약리학" required>
         </div>
         <div class="field">
-          <label>계정</label>
-          <div class="seg" id="uploadAccountSeg">
-            <button type="button" class="seg-btn active" data-upload-account="eunpyo">Eunpyo</button>
-            <button type="button" class="seg-btn" data-upload-account="minseong">Minseong</button>
-          </div>
           <label>주차</label>
           <input name="week" placeholder="예: 2주차, 3주차" required>
         </div>
