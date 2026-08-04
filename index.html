@@ -503,8 +503,6 @@ document.getElementById('themeDarkBtn').addEventListener('click', () => applyThe
   requestAnimationFrame(tick);
 })();
 
-initDashboard();
-
 /* ---------- quote + d-day ---------- */
 async function loadDashboardMeta() {
   const data = await rpc('get_dashboard_meta', { p_passcode: getPasscode() }).catch(() => null);
@@ -858,6 +856,9 @@ document.getElementById('f').addEventListener('submit', async (e) => {
     label.textContent = '업로드';
   }
 });
+
+/* ---------- init (must run after all declarations above) ---------- */
+initDashboard();
 </script>
 </body>
 </html>
