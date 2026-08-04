@@ -370,6 +370,27 @@
   #status.info { background: var(--info-bg); color: var(--info-text); }
   #status.success { background: var(--success-bg); color: var(--success-text); }
   #status.error { background: var(--error-bg); color: var(--error-text); }
+
+  /* ---------- calendar ---------- */
+  .calendar-card { padding: 20px 20px 18px; margin-top: 16px; }
+  .calendar-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+  .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+  .calendar-day {
+    aspect-ratio: 1; border-radius: 10px; padding: 6px 5px; cursor: pointer;
+    background: var(--field-bg); border: 1px solid transparent; display: flex; flex-direction: column; gap: 4px;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .calendar-day:hover { border-color: var(--border); }
+  .calendar-day.today { border-color: var(--badge-indigo); }
+  .calendar-day.out-of-range { opacity: 0.35; }
+  .calendar-day.selected { background: var(--badge-indigo-bg); }
+  .calendar-day-num { font-size: 11.5px; font-weight: 700; color: var(--text); }
+  .calendar-day-dots { display: flex; flex-wrap: wrap; gap: 2px; align-items: center; }
+  .calendar-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--badge-indigo); flex-shrink: 0; }
+  .calendar-dot.done { background: var(--text-muted); opacity: 0.5; }
+  .calendar-day-more { font-size: 9px; color: var(--text-muted); }
+  .calendar-day-detail { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); display: none; }
+  .calendar-day-detail-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
 </style>
 </head>
 <body>
@@ -504,6 +525,17 @@
       </button>
     </form>
     <p id="status"></p>
+  </section>
+
+  <section class="card calendar-card" id="calendarCard">
+    <div class="panel-header-row">
+      <h2><span class="icon-badge indigo">📆</span> 캘린더</h2>
+    </div>
+    <div class="calendar-weekdays">
+      <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+    <div class="calendar-day-detail" id="calendarDayDetail"></div>
   </section>
 </div>
 
@@ -654,6 +686,7 @@ function switchAccount(acc) {
     card.querySelector('.stat-label').textContent = active ? '선택됨' : '전환';
   });
   scheduleFilter = 'today';
+  selectedCalendarDate = null;
   document.querySelectorAll('.schedule-filter .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === 'today'));
   document.getElementById('scheduleBody').innerHTML = '<div class="empty-msg">일정을 불러오는 중...</div>';
   document.getElementById('materialsBody').innerHTML = '<div class="empty-msg">자료 목록을 불러오는 중...</div>';
@@ -669,6 +702,8 @@ document.querySelectorAll('.account-tab').forEach(card => {
 /* ---------- schedule ---------- */
 let scheduleItemsCache = [];
 let goalsCache = [];
+let calendarCache = [];
+let selectedCalendarDate = null;
 let scheduleFilter = 'today';
 let openRemindId = null;
 
@@ -700,8 +735,10 @@ async function loadSchedule(soft) {
   }
   scheduleItemsCache = data.items || [];
   goalsCache = data.goals || [];
+  calendarCache = data.calendar || [];
   populateGoalSelect();
   renderProgress();
+  renderCalendar();
   if (soft && openRemindId) return; // don't clobber an in-progress reminder edit
   renderSchedule();
 }
@@ -713,8 +750,9 @@ function renderProgress() {
   const pctEl = document.getElementById('progressRingPct');
   const subEl = document.getElementById('progressSubtext');
   if (!fg) return;
-  const total = scheduleItemsCache.length;
-  const done = scheduleItemsCache.filter(it => it.done).length;
+  const todayItems = scheduleItemsCache.filter(it => it.date === todayStr());
+  const total = todayItems.length;
+  const done = todayItems.filter(it => it.done).length;
   fg.style.strokeDasharray = PROGRESS_RING_CIRC;
   if (!total) {
     fg.style.strokeDashoffset = PROGRESS_RING_CIRC;
@@ -726,6 +764,83 @@ function renderProgress() {
   fg.style.strokeDashoffset = PROGRESS_RING_CIRC * (1 - pct / 100);
   pctEl.textContent = pct + '%';
   subEl.textContent = `${done}/${total} 완료`;
+}
+
+/* ---------- calendar (today-7 ~ today+21) ---------- */
+function dateToStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('calendarGrid');
+  if (!grid) return;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const rangeStart = new Date(today); rangeStart.setDate(rangeStart.getDate() - 7);
+  const rangeEnd = new Date(today); rangeEnd.setDate(rangeEnd.getDate() + 21);
+
+  const gridStart = new Date(rangeStart);
+  gridStart.setDate(gridStart.getDate() - gridStart.getDay());
+  const totalDays = Math.ceil((rangeEnd - gridStart) / 86400000) + 1;
+  const cellCount = Math.ceil(totalDays / 7) * 7;
+
+  const itemsByDate = {};
+  calendarCache.forEach(it => {
+    (itemsByDate[it.date] = itemsByDate[it.date] || []).push(it);
+  });
+
+  const todayStrVal = dateToStr(today);
+  let html = '';
+  for (let i = 0; i < cellCount; i++) {
+    const d = new Date(gridStart);
+    d.setDate(d.getDate() + i);
+    const ds = dateToStr(d);
+    const inRange = d >= rangeStart && d <= rangeEnd;
+    const dayItems = itemsByDate[ds] || [];
+    const dots = dayItems.slice(0, 4).map(it => `<span class="calendar-dot ${it.done ? 'done' : ''}"></span>`).join('');
+    const more = dayItems.length > 4 ? `<span class="calendar-day-more">+${dayItems.length - 4}</span>` : '';
+    const classes = ['calendar-day'];
+    if (ds === todayStrVal) classes.push('today');
+    if (!inRange) classes.push('out-of-range');
+    if (ds === selectedCalendarDate) classes.push('selected');
+    html += `<div class="${classes.join(' ')}" data-date="${ds}">
+      <div class="calendar-day-num">${d.getDate()}</div>
+      <div class="calendar-day-dots">${dots}${more}</div>
+    </div>`;
+  }
+  grid.innerHTML = html;
+  grid.querySelectorAll('.calendar-day').forEach(el => {
+    el.addEventListener('click', () => {
+      selectedCalendarDate = el.dataset.date === selectedCalendarDate ? null : el.dataset.date;
+      renderCalendar();
+    });
+  });
+  renderCalendarDayDetail();
+}
+
+function renderCalendarDayDetail() {
+  const box = document.getElementById('calendarDayDetail');
+  if (!box) return;
+  if (!selectedCalendarDate) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  const dayItems = calendarCache.filter(it => it.date === selectedCalendarDate);
+  box.style.display = 'block';
+  const title = `<div class="calendar-day-detail-title">${escapeHtml(selectedCalendarDate)}</div>`;
+  if (!dayItems.length) {
+    box.innerHTML = title + '<div class="empty-msg">이 날 일정이 없어요</div>';
+    return;
+  }
+  box.innerHTML = title + dayItems.map(it => `
+    <div class="todo-item ${it.done ? 'done' : ''}" data-id="${escapeAttr(it.id)}">
+      <div class="todo-check ${it.done ? 'done' : ''}" data-id="${escapeAttr(it.id)}">${it.done ? '✓' : ''}</div>
+      <div style="flex:1;">
+        <div class="todo-text">${escapeHtml(it.title)}${it.goal ? `<span class="tag-goal">${escapeHtml(it.goal)}</span>` : ''}</div>
+      </div>
+    </div>
+  `).join('');
+  box.querySelectorAll('.todo-check').forEach(el => {
+    el.addEventListener('click', () => toggleTodo(el.dataset.id));
+  });
 }
 
 const SCHEDULE_EMPTY_MSG = {
@@ -817,15 +932,20 @@ document.querySelectorAll('.schedule-filter .seg-btn').forEach(btn => {
 });
 
 async function toggleTodo(id) {
-  const row = document.querySelector(`.todo-item[data-id="${cssEscape(id)}"]`);
+  // the same id can appear twice at once (schedule panel + calendar day detail), so update all instances
   const check = document.querySelector(`.todo-check[data-id="${cssEscape(id)}"]`);
   const newDone = !check.classList.contains('done');
-  check.classList.toggle('done', newDone);
-  check.textContent = newDone ? '✓' : '';
-  row.classList.toggle('done', newDone);
+  document.querySelectorAll(`.todo-check[data-id="${cssEscape(id)}"]`).forEach(el => {
+    el.classList.toggle('done', newDone);
+    el.textContent = newDone ? '✓' : '';
+  });
+  document.querySelectorAll(`.todo-item[data-id="${cssEscape(id)}"]`).forEach(el => el.classList.toggle('done', newDone));
   const cached = scheduleItemsCache.find(it => String(it.id) === String(id));
   if (cached) cached.done = newDone;
+  const calItem = calendarCache.find(it => String(it.id) === String(id));
+  if (calItem) calItem.done = newDone;
   renderProgress();
+  renderCalendar();
   const acc = currentAccount;
   await rpc('toggle_todo_item_local', { p_todo_id: id, p_done: newDone, p_passcode: getPasscode(), p_account: acc }).catch(() => {});
   rpc('fire_todo_toggle', { p_todo_id: id, p_done: newDone, p_passcode: getPasscode(), p_account: acc }).catch(() => {});
@@ -870,8 +990,11 @@ async function addTodoItem() {
   const acc = currentAccount;
   const res = await rpc('add_todo_item_local', { p_title: title, p_date: dateStr, p_passcode: getPasscode(), p_account: acc, p_goal: goal, p_content: content }).catch(() => null);
   if (res && res.ok && acc === currentAccount) {
-    scheduleItemsCache.push({ id: res.id, title, date: dateStr, done: false, overdue: false, goal, content, remindAt: null });
+    const newItem = { id: res.id, title, date: dateStr, done: false, overdue: false, goal, content, remindAt: null };
+    scheduleItemsCache.push(newItem);
+    calendarCache.push(newItem);
     renderProgress();
+    renderCalendar();
     renderSchedule();
   }
   rpc('fire_todo_add', { p_title: title, p_date: dateStr, p_passcode: getPasscode(), p_account: acc, p_goal: goal, p_content: content }).catch(() => {});
