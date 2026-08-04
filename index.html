@@ -497,10 +497,24 @@ applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
 document.getElementById('themeLightBtn').addEventListener('click', () => applyTheme('light'));
 document.getElementById('themeDarkBtn').addEventListener('click', () => applyTheme('dark'));
 
-/* ---------- side icons: lagging scroll-follow (Apple-style) ---------- */
+/* ---------- side icons: align with 일정 card top, lagging scroll-follow (Apple-style) ---------- */
 (function(){
-  const groups = [document.querySelector('.side-toggles'), document.querySelector('.side-nav')].filter(Boolean);
+  const toggles = document.querySelector('.side-toggles');
+  const nav = document.querySelector('.side-nav');
+  const scheduleCard = document.getElementById('scheduleCard');
+  const groups = [toggles, nav].filter(Boolean);
   if (!groups.length) return;
+
+  function alignSideIcons() {
+    if (!scheduleCard || !toggles) return;
+    const docTop = scheduleCard.getBoundingClientRect().top + window.scrollY;
+    toggles.style.top = docTop + 'px';
+    if (nav) nav.style.top = (docTop + toggles.offsetHeight + 30) + 'px';
+  }
+  alignSideIcons();
+  setTimeout(alignSideIcons, 700);
+  window.addEventListener('resize', alignSideIcons);
+
   let current = 0;
   function tick() {
     const target = Math.min(window.scrollY * 0.1, 70);
