@@ -373,8 +373,12 @@
 
   /* ---------- calendar ---------- */
   .calendar-card { padding: 20px 20px 18px; margin-top: 16px; }
-  .calendar-layout { display: flex; gap: 20px; align-items: flex-start; }
-  .calendar-main { flex: 1; min-width: 0; }
+  .calendar-layout {
+    display: grid; grid-template-columns: 1fr 0px; column-gap: 0px; align-items: flex-start;
+    transition: grid-template-columns 0.2s ease, column-gap 0.2s ease;
+  }
+  .calendar-layout.detail-open { grid-template-columns: 1fr 260px; column-gap: 20px; }
+  .calendar-main { min-width: 0; }
   .calendar-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
   .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
   .calendar-day {
@@ -392,10 +396,10 @@
   .calendar-dot.done { background: var(--text-muted); opacity: 0.5; }
   .calendar-day-more { font-size: 9px; color: var(--text-muted); }
   .calendar-detail-panel {
-    flex: 0 0 0px; overflow: hidden; opacity: 0; position: relative;
-    transition: flex-basis 0.2s ease, opacity 0.2s ease;
+    overflow: hidden; opacity: 0; position: relative; min-width: 0;
+    transition: opacity 0.2s ease;
   }
-  .calendar-detail-panel.show { flex-basis: 260px; opacity: 1; padding-left: 4px; }
+  .calendar-detail-panel.show { opacity: 1; padding-left: 4px; }
   .calendar-detail-close {
     position: absolute; top: 0; right: 0; background: none; border: none; cursor: pointer;
     font-size: 18px; color: var(--text-muted); line-height: 1; padding: 2px 4px;
@@ -410,8 +414,8 @@
   .calendar-detail-add select.goal-select { height: 34px; max-width: 90px; }
   .calendar-detail-add .add-btn { width: 34px; height: 34px; font-size: 16px; }
   @media (max-width: 760px) {
-    .calendar-layout { flex-direction: column; }
-    .calendar-detail-panel.show { width: 100%; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); padding-left: 0; }
+    .calendar-layout, .calendar-layout.detail-open { grid-template-columns: 1fr; }
+    .calendar-detail-panel.show { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); padding-left: 0; }
   }
 </style>
 </head>
@@ -853,9 +857,16 @@ const WEEKDAY_KR = ['일', '월', '화', '수', '목', '금', '토'];
 
 function renderCalendarDayDetail() {
   const panel = document.getElementById('calendarDayDetail');
+  const layout = document.querySelector('.calendar-layout');
   if (!panel) return;
-  if (!selectedCalendarDate) { panel.classList.remove('show'); panel.innerHTML = ''; return; }
+  if (!selectedCalendarDate) {
+    panel.classList.remove('show');
+    if (layout) layout.classList.remove('detail-open');
+    panel.innerHTML = '';
+    return;
+  }
   panel.classList.add('show');
+  if (layout) layout.classList.add('detail-open');
 
   const dayItems = calendarCache.filter(it => it.date === selectedCalendarDate);
   const d = new Date(selectedCalendarDate + 'T00:00:00');
