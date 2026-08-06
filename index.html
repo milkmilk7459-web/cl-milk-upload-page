@@ -211,6 +211,12 @@
     background: var(--field-bg); border: 1px solid var(--border); border-radius: 999px;
     outline: none; flex-shrink: 0;
   }
+  .panel-filter-select {
+    max-width: 120px; height: 28px; padding: 0 8px; font-size: 12px; color: var(--text-muted);
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 999px;
+    outline: none; flex-shrink: 0; cursor: pointer;
+  }
+  .panel-filter-select:hover { color: var(--text); }
   .add-todo-row .memo-toggle-btn {
     width: 36px; height: 36px; flex-shrink: 0; padding: 0;
     background: var(--field-bg); color: var(--text-muted); border: 1px solid var(--border); border-radius: 50%;
@@ -399,9 +405,13 @@
   .calendar-day.out-of-range { opacity: 0.35; }
   .calendar-day.selected { background: var(--badge-indigo-bg); }
   .calendar-day-num { font-size: 11.5px; font-weight: 700; color: var(--text); }
-  .calendar-day-dots { display: flex; flex-wrap: wrap; gap: 2px; align-items: center; }
-  .calendar-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--badge-indigo); flex-shrink: 0; }
-  .calendar-dot.done { background: var(--text-muted); opacity: 0.5; }
+  .calendar-day-dots { display: flex; flex-direction: column; gap: 1px; width: 100%; min-width: 0; overflow: hidden; }
+  .calendar-event-pill {
+    font-size: 8.5px; line-height: 1.5; padding: 0 3px; border-radius: 3px;
+    background: var(--badge-indigo-bg); color: var(--badge-indigo);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; text-align: left;
+  }
+  .calendar-event-pill.done { background: var(--field-bg); color: var(--text-muted); text-decoration: line-through; }
   .calendar-day-more { font-size: 9px; color: var(--text-muted); }
   .calendar-detail-panel {
     overflow: hidden; opacity: 0; position: relative; min-width: 0;
@@ -506,7 +516,7 @@
     <section class="card panel" id="materialsCard">
       <div class="panel-header-row">
         <h2><span class="icon-badge dark">📄</span> 최신 자료</h2>
-        <select id="materialsSubjectFilter" class="goal-select" style="display:none;"></select>
+        <select id="materialsSubjectFilter" class="panel-filter-select" style="display:none;"></select>
       </div>
       <div class="panel-body" id="materialsBody">
         <div class="empty-msg">자료 목록을 불러오는 중...</div>
@@ -566,7 +576,7 @@
   <section class="card calendar-card" id="calendarCard">
     <div class="panel-header-row">
       <h2><span class="icon-badge indigo">📆</span> 캘린더</h2>
-      <select id="calendarCategoryFilter" class="goal-select" style="display:none;"></select>
+      <select id="calendarCategoryFilter" class="panel-filter-select" style="display:none;"></select>
     </div>
     <div class="calendar-layout">
       <div class="calendar-main">
@@ -861,8 +871,10 @@ function renderCalendar() {
     const ds = dateToStr(d);
     const inRange = d >= rangeStart && d <= rangeEnd;
     const dayItems = itemsByDate[ds] || [];
-    const dots = dayItems.slice(0, 4).map(it => `<span class="calendar-dot ${it.done ? 'done' : ''}"></span>`).join('');
-    const more = dayItems.length > 4 ? `<span class="calendar-day-more">+${dayItems.length - 4}</span>` : '';
+    const dots = dayItems.slice(0, 2).map(it =>
+      `<span class="calendar-event-pill ${it.done ? 'done' : ''}" title="${escapeAttr(it.title)}">${escapeHtml(it.title)}</span>`
+    ).join('');
+    const more = dayItems.length > 2 ? `<span class="calendar-day-more">+${dayItems.length - 2}개</span>` : '';
     const classes = ['calendar-day'];
     if (ds === todayStrVal) classes.push('today');
     if (!inRange) classes.push('out-of-range');
