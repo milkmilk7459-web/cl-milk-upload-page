@@ -981,6 +981,11 @@ function renderSchedule() {
   else if (scheduleFilter === 'today') items = items.filter(it => it.date === todayStr());
   else if (scheduleFilter === 'tomorrow') items = items.filter(it => it.date === tomorrowStr());
 
+  items = items.slice().sort((a, b) => {
+    if (a.done !== b.done) return a.done ? 1 : -1;
+    return a.title.localeCompare(b.title, 'ko');
+  });
+
   if (!items.length) {
     body.innerHTML = `<div class="empty-msg">${SCHEDULE_EMPTY_MSG[scheduleFilter] || '해당하는 항목이 없어요'}</div>`;
     return;
