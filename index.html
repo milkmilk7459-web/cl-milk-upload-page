@@ -396,23 +396,24 @@
   .calendar-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
   .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
   .calendar-day {
-    aspect-ratio: 1; border-radius: 10px; padding: 6px 5px; cursor: pointer;
-    background: var(--field-bg); border: 1px solid transparent; display: flex; flex-direction: column; gap: 4px;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    min-height: 46px; border-radius: 8px; padding: 4px; cursor: pointer;
+    background: var(--field-bg); border: 1px solid transparent; display: flex; flex-direction: column; gap: 2px;
+    overflow: hidden; transition: border-color 0.15s ease, background 0.15s ease;
   }
   .calendar-day:hover { border-color: var(--border); }
   .calendar-day.today { border-color: var(--badge-indigo); }
   .calendar-day.out-of-range { opacity: 0.35; }
   .calendar-day.selected { background: var(--badge-indigo-bg); }
-  .calendar-day-num { font-size: 11.5px; font-weight: 700; color: var(--text); }
+  .calendar-day-num { font-size: 10.5px; font-weight: 700; color: var(--text); flex-shrink: 0; }
   .calendar-day-dots { display: flex; flex-direction: column; gap: 1px; width: 100%; min-width: 0; overflow: hidden; }
   .calendar-event-pill {
-    font-size: 8.5px; line-height: 1.5; padding: 0 3px; border-radius: 3px;
+    font-size: 8px; line-height: 1.4; padding: 0 3px; border-radius: 3px;
     background: var(--badge-indigo-bg); color: var(--badge-indigo);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; text-align: left;
+    box-sizing: border-box;
   }
   .calendar-event-pill.done { background: var(--field-bg); color: var(--text-muted); text-decoration: line-through; }
-  .calendar-day-more { font-size: 9px; color: var(--text-muted); }
+  .calendar-day-more { font-size: 8px; color: var(--text-muted); }
   .calendar-detail-panel {
     overflow: hidden; opacity: 0; position: relative; min-width: 0;
     transition: opacity 0.2s ease;
@@ -827,6 +828,11 @@ function dateToStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function truncateTitle(s) {
+  s = String(s || '');
+  return s.length > 8 ? s.slice(0, 7) + '...' : s;
+}
+
 function populateCalendarCategoryFilter() {
   const sel = document.getElementById('calendarCategoryFilter');
   if (!sel) return;
@@ -872,7 +878,7 @@ function renderCalendar() {
     const inRange = d >= rangeStart && d <= rangeEnd;
     const dayItems = itemsByDate[ds] || [];
     const dots = dayItems.slice(0, 2).map(it =>
-      `<span class="calendar-event-pill ${it.done ? 'done' : ''}" title="${escapeAttr(it.title)}">${escapeHtml(it.title)}</span>`
+      `<span class="calendar-event-pill ${it.done ? 'done' : ''}" title="${escapeAttr(it.title)}">${escapeHtml(truncateTitle(it.title))}</span>`
     ).join('');
     const more = dayItems.length > 2 ? `<span class="calendar-day-more">+${dayItems.length - 2}개</span>` : '';
     const classes = ['calendar-day'];
