@@ -286,6 +286,14 @@
     padding: 10px 4px; border-bottom: 1px solid var(--border);
   }
   .activity-item:last-child { border-bottom: none; }
+  .material-delete-btn {
+    background: none; border: none; cursor: pointer; flex-shrink: 0;
+    width: 22px; height: 22px; border-radius: 50%; padding: 0;
+    font-size: 15px; line-height: 1; color: var(--text-muted); opacity: 0.5;
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity 0.15s ease, background 0.15s ease;
+  }
+  .material-delete-btn:hover { opacity: 1; background: var(--field-bg); }
   .activity-text { font-size: 13.5px; line-height: 1.4; }
   .activity-text b { font-weight: 700; }
   .activity-time { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
@@ -498,6 +506,7 @@
     <section class="card panel" id="materialsCard">
       <div class="panel-header-row">
         <h2><span class="icon-badge dark">📄</span> 최신 자료</h2>
+        <select id="materialsSubjectFilter" class="goal-select" style="display:none;"></select>
       </div>
       <div class="panel-body" id="materialsBody">
         <div class="empty-msg">자료 목록을 불러오는 중...</div>
@@ -528,21 +537,22 @@
           <input name="week" placeholder="예: 2주차, 3주차" required>
         </div>
         <div class="field full">
-          <label>녹음 STT</label>
+          <label>녹음 STT <span class="hint">(없어도 진행 가능)</span></label>
           <div class="seg">
             <button type="button" class="seg-btn active" data-txt-mode="file">파일 업로드 (.txt)</button>
             <button type="button" class="seg-btn" data-txt-mode="text">직접 입력</button>
+            <button type="button" class="seg-btn" data-txt-mode="none">녹음 없음</button>
           </div>
           <div id="txtFilePanel" style="margin-top:8px;">
-            <input name="txt" type="file" accept=".txt" required>
+            <input name="txt" type="file" accept=".txt">
           </div>
           <div id="txtTextPanel" style="margin-top:8px; display:none;">
             <textarea name="txtText" rows="6" placeholder="녹음 내용을 여기에 붙여넣거나 직접 입력하세요"></textarea>
           </div>
         </div>
         <div class="field full">
-          <label>교안 <span class="hint">(.pdf)</span></label>
-          <input name="pdf" type="file" accept=".pdf" required>
+          <label>교안 <span class="hint">(.pdf, 없어도 진행 가능)</span></label>
+          <input name="pdf" type="file" accept=".pdf">
         </div>
       </div>
       <button type="submit" id="submitBtn">
@@ -556,6 +566,7 @@
   <section class="card calendar-card" id="calendarCard">
     <div class="panel-header-row">
       <h2><span class="icon-badge indigo">📆</span> 캘린더</h2>
+      <select id="calendarCategoryFilter" class="goal-select" style="display:none;"></select>
     </div>
     <div class="calendar-layout">
       <div class="calendar-main">
@@ -734,6 +745,7 @@ let scheduleItemsCache = [];
 let goalsCache = [];
 let calendarCache = [];
 let selectedCalendarDate = null;
+let calendarCategoryFilter = null;
 let scheduleFilter = 'today';
 let openRemindId = null;
 
@@ -805,9 +817,23 @@ function dateToStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function populateCalendarCategoryFilter() {
+  const sel = document.getElementById('calendarCategoryFilter');
+  if (!sel) return;
+  const cats = Array.from(new Set(calendarCache.map(it => it.goal).filter(Boolean)));
+  if (!cats.length) { sel.style.display = 'none'; sel.innerHTML = ''; calendarCategoryFilter = null; return; }
+  const prev = calendarCategoryFilter;
+  sel.innerHTML = '<option value="">전체 카테고리</option>' +
+    cats.map(c => `<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`).join('');
+  sel.value = cats.includes(prev) ? prev : '';
+  calendarCategoryFilter = sel.value || null;
+  sel.style.display = '';
+}
+
 function renderCalendar() {
   const grid = document.getElementById('calendarGrid');
   if (!grid) return;
+  populateCalendarCategoryFilter();
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -819,8 +845,11 @@ function renderCalendar() {
   const totalDays = Math.ceil((rangeEnd - gridStart) / 86400000) + 1;
   const cellCount = Math.ceil(totalDays / 7) * 7;
 
+  const visibleItems = calendarCategoryFilter
+    ? calendarCache.filter(it => it.goal === calendarCategoryFilter)
+    : calendarCache;
   const itemsByDate = {};
-  calendarCache.forEach(it => {
+  visibleItems.forEach(it => {
     (itemsByDate[it.date] = itemsByDate[it.date] || []).push(it);
   });
 
@@ -868,7 +897,8 @@ function renderCalendarDayDetail() {
   panel.classList.add('show');
   if (layout) layout.classList.add('detail-open');
 
-  const dayItems = calendarCache.filter(it => it.date === selectedCalendarDate);
+  const dayItems = calendarCache.filter(it => it.date === selectedCalendarDate &&
+    (!calendarCategoryFilter || it.goal === calendarCategoryFilter));
   const d = new Date(selectedCalendarDate + 'T00:00:00');
   const titleText = `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAY_KR[d.getDay()]})`;
   const listHtml = dayItems.length ? dayItems.map(it => `
@@ -1001,6 +1031,11 @@ document.querySelectorAll('.schedule-filter .seg-btn').forEach(btn => {
   });
 });
 
+document.getElementById('calendarCategoryFilter').addEventListener('change', (e) => {
+  calendarCategoryFilter = e.target.value || null;
+  renderCalendar();
+});
+
 async function toggleTodo(id) {
   // the same id can appear twice at once (schedule panel + calendar day detail), so update all instances
   const check = document.querySelector(`.todo-check[data-id="${cssEscape(id)}"]`);
@@ -1083,20 +1118,57 @@ const STAGE_LABEL = {
 };
 const STAGE_PROGRESS = { queued: 10, downloading: 30, generating: 60, uploading: 85, done: 100, failed: 100 };
 
+let materialsCache = [];
+let materialsSubjectFilter = null;
+
 async function loadMaterials() {
   const acc = currentAccount;
   const data = await rpc('list_materials', { p_passcode: getPasscode(), p_account: acc }).catch(() => null);
   if (!Array.isArray(data) || acc !== currentAccount) return;
-  renderMaterials(data);
+  materialsCache = data;
+  renderMaterials();
 }
 
-function renderMaterials(rows) {
+function populateMaterialsSubjectFilter() {
+  const sel = document.getElementById('materialsSubjectFilter');
+  if (!sel) return;
+  const subjects = Array.from(new Set(materialsCache.map(r => r.subject).filter(Boolean)));
+  if (!subjects.length) { sel.style.display = 'none'; sel.innerHTML = ''; materialsSubjectFilter = null; return; }
+  const prev = materialsSubjectFilter;
+  sel.innerHTML = '<option value="">전체 과목</option>' +
+    subjects.map(s => `<option value="${escapeAttr(s)}">${escapeHtml(s)}</option>`).join('');
+  sel.value = subjects.includes(prev) ? prev : '';
+  materialsSubjectFilter = sel.value || null;
+  sel.style.display = '';
+}
+
+function renderMaterials() {
+  populateMaterialsSubjectFilter();
   const body = document.getElementById('materialsBody');
+  const rows = materialsSubjectFilter
+    ? materialsCache.filter(r => r.subject === materialsSubjectFilter)
+    : materialsCache;
   if (!rows.length) {
-    body.innerHTML = '<div class="empty-msg">아직 업로드된 자료가 없어요</div>';
+    body.innerHTML = `<div class="empty-msg">${materialsSubjectFilter ? '이 과목의 자료가 없어요' : '아직 업로드된 자료가 없어요'}</div>`;
     return;
   }
   body.innerHTML = rows.map(materialItemHtml).join('');
+  body.querySelectorAll('.material-delete-btn').forEach(el => {
+    el.addEventListener('click', () => deleteMaterial(el.dataset.id));
+  });
+}
+
+document.getElementById('materialsSubjectFilter').addEventListener('change', (e) => {
+  materialsSubjectFilter = e.target.value || null;
+  renderMaterials();
+});
+
+async function deleteMaterial(id) {
+  if (!confirm('이 자료 기록을 삭제할까요? (업로드된 파일 자체는 지워지지 않아요)')) return;
+  const acc = currentAccount;
+  materialsCache = materialsCache.filter(r => String(r.id) !== String(id));
+  renderMaterials();
+  await rpc('delete_material', { p_materials_id: Number(id), p_passcode: getPasscode(), p_account: acc }).catch(() => {});
 }
 
 function relativeTime(iso) {
@@ -1143,6 +1215,7 @@ function materialItemHtml(r) {
         <div class="activity-time">${time}</div>
         ${extra}
       </div>
+      <button type="button" class="material-delete-btn" data-id="${escapeAttr(r.id)}" title="삭제" aria-label="삭제">×</button>
     </div>`;
 }
 
@@ -1211,8 +1284,6 @@ document.querySelectorAll('.seg-btn[data-txt-mode]').forEach((btn) => {
     document.querySelectorAll('.seg-btn[data-txt-mode]').forEach((b) => b.classList.toggle('active', b === btn));
     document.getElementById('txtFilePanel').style.display = txtMode === 'file' ? '' : 'none';
     document.getElementById('txtTextPanel').style.display = txtMode === 'text' ? '' : 'none';
-    txtFileInput.required = txtMode === 'file';
-    txtTextArea.required = txtMode === 'text';
   });
 });
 
@@ -1229,16 +1300,20 @@ document.getElementById('f').addEventListener('submit', async (e) => {
   const btn = document.getElementById('submitBtn');
   const label = document.getElementById('submitLabel');
   const form = e.target;
-  const pdfFile = form.pdf.files[0];
+  const pdfFile = form.pdf.files[0] || null;
 
-  let txtSource, txtName;
-  if (txtMode === 'file') {
+  let txtSource = null, txtName = null;
+  if (txtMode === 'file' && form.txt.files[0]) {
     txtSource = form.txt.files[0];
-    txtName = txtSource ? txtSource.name : 'lecture.txt';
-  } else {
-    const text = form.txtText.value;
-    txtSource = new Blob([text], { type: 'text/plain' });
+    txtName = txtSource.name;
+  } else if (txtMode === 'text' && form.txtText.value.trim()) {
+    txtSource = new Blob([form.txtText.value], { type: 'text/plain' });
     txtName = 'lecture-typed.txt';
+  }
+
+  if (!txtSource && !pdfFile) {
+    setStatus('error', '녹음이나 교안 중 최소 하나는 있어야 해요.');
+    return;
   }
 
   btn.disabled = true;
@@ -1246,8 +1321,8 @@ document.getElementById('f').addEventListener('submit', async (e) => {
   setStatus('info', '파일을 서버에 올리고 있어요...');
   try {
     const [txtUrl, pdfUrl] = await Promise.all([
-      uploadToStorage(txtSource, txtName),
-      uploadToStorage(pdfFile, pdfFile.name)
+      txtSource ? uploadToStorage(txtSource, txtName) : Promise.resolve(null),
+      pdfFile ? uploadToStorage(pdfFile, pdfFile.name) : Promise.resolve(null)
     ]);
     label.textContent = '처리 요청 중...';
     setStatus('info', '학습자료 생성을 요청하고 있어요...');
@@ -1258,7 +1333,7 @@ document.getElementById('f').addEventListener('submit', async (e) => {
       p_passcode: getPasscode(),
       p_txt_name: txtName,
       p_txt_url: txtUrl,
-      p_pdf_name: pdfFile.name,
+      p_pdf_name: pdfFile ? pdfFile.name : null,
       p_pdf_url: pdfUrl,
       p_account: uploadAccount
     };
