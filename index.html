@@ -1125,7 +1125,8 @@ async function addTodoItemCore(title, dateStr, goal, content) {
 async function addTodoItem() {
   const title = addTodoInput.value.trim();
   if (!title) return;
-  const goal = addTodoGoalSel.value || null;
+  let goal = addTodoGoalSel.value || null;
+  if (!goal && currentAccount === 'eunpyo') goal = '은표';
   const content = addTodoMemoInput.value.trim() || null;
   addTodoInput.value = '';
   addTodoMemoInput.value = '';
